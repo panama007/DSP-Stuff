@@ -14,8 +14,10 @@ mode = "reconstruction"
 fig, (ax,ax2) = plt.subplots(nrows=2, ncols=1)
 plt.subplots_adjust(left=0.30, bottom=0.1, right=0.95, top=0.93)
 
+
+#def draw():
 f = np.loadtxt('signals/'+filename)
-f = f[:256]
+#f = f[:256]
 
 M = len(f)
 n = int(log(M)/log(2)+0.5)
@@ -70,9 +72,9 @@ def title(levels):
             string += str(level) + " +"
         return string[:-2]
 
-def update(val):
+def update():
     f = np.loadtxt('signals/'+filename)
-    f = f[:256]
+   #f = f[:256]
     (A, a) = mra(f, N)
     A[0] = [sum(A[0])/len(A[0])]*len(A[0])
     
@@ -100,7 +102,7 @@ rCheck = plt.axes([0.025, 0.2, 0.15, 0.2], axisbg=axcolor)
 rCheck.set_title("Select Level")
 
 
-radio = RadioButtons(rax, filenames, active=0)
+radio = RadioButtons(rax, filenames, active=1)
 modes = RadioButtons(rMode, ["Decomposition", "Reconstruction"], active =1)
 check = RadioButtons(rCheck, ["Level "+str(i) for i in range(-1,8)], active=8)
 #check = CheckButtons(rCheck, ["Level "+str(i) for i in range(-1,8)], (True,True,True,True,True,True,True,True, True))
@@ -111,7 +113,7 @@ for label in radio.labels + check.labels + modes.labels:
 def radiofunc(label):
     global filename
     filename = label
-    update(0)
+    update()
     '''
 def checkfunc(label):
     global levels
@@ -119,7 +121,7 @@ def checkfunc(label):
     if n in levels: levels.remove(n)
     else: levels.append(n)
     levels = sorted(levels)
-    update(0)
+    update()
     '''
 def checkfunc(label):
     global levels,mode
@@ -128,7 +130,7 @@ def checkfunc(label):
         levels = range(-1, n+1)
     else:
         levels = [n]
-    update(0)
+    update()
     
 def modesfunc(label):
     global mode, levels
@@ -138,7 +140,7 @@ def modesfunc(label):
         levels = range(-1, n+1)
     else:
         levels = [n]
-    update(0)
+    update()
     
 modes.on_clicked(modesfunc)
 radio.on_clicked(radiofunc)

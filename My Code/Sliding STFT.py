@@ -15,10 +15,15 @@ By: Alex Barreiro
 import numpy as np									                            # contains numerical computation functions
 import matplotlib
 matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt							                    # contains plotting functions
+from mpl_toolkits.mplot3d.axes3d import Axes3D
+#import matplotlib.pyplot as plt							                    # contains plotting functions
 import Tkinter as Tk
 from matplotlib.widgets import Slider, Button, RadioButtons	# contains sliders/buttons
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.pyplot import setp
+from matplotlib.figure import Figure
+import time
+
 import os
 
 
@@ -32,10 +37,17 @@ filenames = os.listdir("signals/")                                             #
 axcolor = 'white'
 max_A = 50										                                    # max standard deviation
 global y
+spec_plot = 0
+lines = []
+
+def transform_complex(line):
+    return line.replace(b'+-', b'-')
 
 def choose_signal(i):
     global y
-    y = np.loadtxt('signals/'+filenames[i])
+    with open('signals/'+filenames[i], 'rb') as f:
+        lines = map(transform_complex, f)
+        y = np.loadtxt(lines, dtype=np.complex128)
     y /= max(max(y),-min(y))
 
 def mexican_hat_window(t, a, b):						                    # mexican hat window. b = midpoint/mean, a = std. dev
@@ -72,9 +84,10 @@ def clear_axis(ax):									                                # function to clear 
 root = Tk.Tk()
 root.wm_title('Sliding STFT')
 
-
-window = mexican_hat_window                                             # initially the window is set to mexican hat
+windows = {"Mexican Hat": mexican_hat_window , "Gabor" : gabor_window, "none" : lambda t,a,b: np.ones(t.size)}
+window = windows["Mexican Hat"]                                          # initially the window is set to mexican hat
 choose_signal(2)
+
 
 N = len(y)                                                                             # number of data points to use
 
@@ -89,7 +102,7 @@ period = N / Fs
 n = np.arange(1., N + 1)                                                       # list of indeces. n = [1,2,3....1024]
 frequencies = n / N * Fs                                                         # frequencies = [1/1024*2pi, 2/1024*2pi, ....1024/1024*2pi]
 
-fig = matplotlib.figure.Figure()
+fig = Figure()
 ax = fig.add_subplot(221)
 ax2 = fig.add_subplot(223)
 ax3 = fig.add_subplot(222)
@@ -97,7 +110,8 @@ ax4 = fig.add_subplot(224)
 fig.subplots_adjust(left=0.30, bottom=0.22, right=0.95, top=0.93, hspace=0.45)  # sets the spacing limits on the 4 plots
 
 canvas = FigureCanvasTkAgg(fig,master=root)#no resize callback as of now
-canvas.get_tk_widget().pack(side=Tk.BOTTOM)
+canvas.show()
+canvas.get_tk_widget().pack(side=Tk.BOTTOM, fill=Tk.BOTH, expand=1)
 
 
 
@@ -108,6 +122,7 @@ canvas.get_tk_widget().pack(side=Tk.BOTTOM)
 
 orig, = ax.plot(t,y)                                                                # plots the signal
 w_line, = ax.plot(t, w, 'r-')                                                     # plots the window on the same graph
+lines.append([orig, w_line])
 
 ax.axis([0,t[-1],-max(abs(y)),max(abs(y))])                             # adjusts the graph range, the x and y ranges
 ax.spines['bottom'].set_position('zero')                                  #     adjusts the labels, title
@@ -117,6 +132,7 @@ ax.set_title('Original Signal + Window')
 
 windowed_y = w*y                                                                # calculates the windowed signal = window*signal
 windowed_y_line, = ax2.plot(t,windowed_y);                          #   plots it
+lines.append(windowed_y_line)
 ax2.spines['bottom'].set_position('zero')
 ax2.axis([0,t[-1],-max(abs(windowed_y)),max(abs(windowed_y))])   # adjusts the graphing range and labels
 ax2.set_xlabel('Time (sec)')
@@ -127,7 +143,8 @@ S = np.fft.fft(windowed_y)                                                     #
 S = np.fft.fftshift(S)[N/2:]                                                      # shift so that zero frequency is at the start instead of middle
 
 fft, = ax3.plot(frequencies[:N/2],abs(S[:N/2]))                        # plots the FFT of windowed signal
-ax3.axis([0, max(frequencies)/4, 0, max(abs(S))])                  # adjusts the plotting range
+lines.append(fft)
+ax3.axis([0, max(frequencies)/2, 0, max(abs(S))])                  # adjusts the plotting range
 ax3.set_xlabel('Frequency')
 ax3.set_title('FFT of Windowed Signal')
 
@@ -150,7 +167,8 @@ resetax = fig.add_axes([0.8, 0.020, 0.1, 0.03])                                 
 button = Button(resetax, 'Reset', color=axcolor, hovercolor='0.975')
 
 
-def update(val):                                                                            # function to be run whenever a slider changes value
+def update(_):                                                                            # function to be run whenever a slider changes value
+    test = time.time()
     N = len(y)                                                                                 # number of data points to use
     Fs = 2 * np.pi
     Ts = 1 / Fs
@@ -160,34 +178,46 @@ def update(val):                                                                
     frequencies = n / N * Fs                                                            #   frequencies = [1/1024*2pi, 2/1024*2pi, ....1024/1024*2pi]
 
     a = int(sliderA.val)                                                                    #   retrieve the std. dev. from the slider
+    sliderB.valmax = t[-1]
     b = int(sliderB.val)                                                                    #   retrieve the center/mean from the slider
 
-    clear_axis(ax)
-    clear_axis(ax2)  
-    clear_axis(ax3)  
-    clear_axis(ax4)
-  
-    ax.plot(t, y)
+    #clear_axis(ax4)
     
     w = window(t, a, b)                                                                   # recalculate the window
-    ax.plot(t,w, 'r-')
     ax.axis([0, t[-1], -max(abs(y)),max(abs(y))])
 
     windowed_y = y*w                                                                    # recalculates the windowed signal
-    
-    ax2.plot(t, windowed_y)    
-    ax2.axis([0,t[-1],-max(abs(windowed_y)),max(abs(windowed_y))])  
+    ax2.axis([0,t[-1],-max(abs(windowed_y)),max(abs(windowed_y))]) 
+         
     
     S = np.fft.fft(windowed_y);                                                         # recalculate the FFT of the windowed signal
     S = np.fft.fftshift(S)[N/2:];
-
-    ax3.plot(frequencies[:N/2], (abs(S[:N/2])))                                                         # replots the FFT
-    ax3.axis([0, max(frequencies)/4, 0, max(abs(S))])
+    ax3.axis([0, max(frequencies)/2, 0, max(abs(S))])
     
-    ax4.specgram(windowed_y, Fs=Fs)
-    ax4.axis([0, (N-128)*Ts, 0, np.pi])
-
-    fig.canvas.draw_idle()                                         # must be executed to update the display
+    
+    setp(lines[0][0], xdata=t, ydata=y)
+    setp(lines[0][1], xdata=t, ydata=w)
+    setp(lines[1], xdata=t, ydata=windowed_y)
+    setp(lines[2], xdata=frequencies[:N/2], ydata=(abs(S[:N/2])))
+    
+    if spec_plot == 0:
+        ax4 = fig.add_subplot(224)
+        ax4.specgram(windowed_y, Fs=Fs)
+        ax4.axis([0, (N-128)*Ts, 0, np.pi])
+    
+    elif spec_plot == 1:
+        ax4 = fig.add_subplot(224, projection='3d')
+        z = []
+        for i in range(N-128):
+            xdata = t[i:i+256]
+            ydata = windowed_y[i:i+256]
+            zdata = np.fft.fftshift(np.fft.fft(ydata, n=N))[N/2:]
+            z.append(abs(zdata))
+        l = len(t[:-128])
+        ax4.plot_surface([[t[j]]*(N/2) for j in range(l)], [frequencies[:N/2]]*l, z, rstride=32, cstride=32)
+    
+    #print time.time()-test
+    fig.canvas.draw()                                         # must be executed to update the display
 
 sliderA.on_changed(update)                                                          # attaches the "update" function to both sliders
 sliderB.on_changed(update)
@@ -199,25 +229,29 @@ def reset(event):                                                               
 button.on_clicked(reset)                                                                # attaches the "reset" function to the button
 
 
-rax = fig.add_axes([0.025, 0.5, 0.22, 0.15], axisbg=axcolor)                  # creates the box for selecting a window
+rax = fig.add_axes([0.025, 0.7, 0.22, 0.15], axisbg=axcolor)                  # creates the box for selecting a window
 rax.set_title("Windows")
 radio = RadioButtons(rax, ("Mexican Hat", "Gabor", "none"), active=0)
 
-for label in radio.labels:                                                              # adjusts the font size of the window names
+rax2 = fig.add_axes([0.025, 0.45, 0.22, 0.15], axisbg=axcolor)
+rax2.set_title("Spectrogram Plot")
+radio2 = RadioButtons(rax2, ("2d Color Plot", "3d Plot"), active=0)
+
+for label in radio.labels + radio2.labels:                                                              # adjusts the font size of the window names
     label.set_fontsize(9.2)
 
 def radiofunc(label):                                                                     # function to be run when a different window is selected
     global window
-    if label == "Mexican Hat":
-        window = mexican_hat_window
-    elif label == "Gabor":
-        window = gabor_window
-    else:
-        window = lambda t,a,b: np.ones(t.size)                               # window = [1,1,....1]
+    window = windows[label]                                                            # window = [1,1,....1]
     update(0)                                                                                # updates the plots since we changed the window
 
-radio.on_clicked(radiofunc)                                                            # attaches the "radiofunc" to our radio buttons.
+def radiofunc2(label):
+    global spec_plot
+    spec_plot = 1 if label == "3d Plot" else 0 
+    update(0)
     
+radio.on_clicked(radiofunc)                                                            # attaches the "radiofunc" to our radio buttons.
+radio2.on_clicked(radiofunc2)    
     
 #Create a toplevel menu (for selecting matrices)
 menubar = Tk.Menu(root)
@@ -234,10 +268,5 @@ menubar.add_cascade(label="Signal From File",menu=filemenu)
 #Display the menu
 root.config(menu=menubar)
 
-#Draw the plot on the canvas
-canvas.show()
-
 Tk.mainloop()
 
-
-#plt.show()                                                      # must be run in order to see the plots
