@@ -1,0 +1,14 @@
+Instruction for running Juri's code:
+
+1. Short-time fourier transform
+
+Z drive is the cloud drive
+
+-Go to Z:\CaltechProjects\Juri Caltech
+-run stft_params (several examples are included in the file)
+
+
+2. Wavelets
+
+-Go to Z:\CaltechProjects\Juri Caltech\[Wavelets with most current date]
+-run example (several examples are included in the file)
