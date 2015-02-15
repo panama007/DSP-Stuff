@@ -64,24 +64,19 @@ class MRAWindow(FourierWindow):
         
     def updateParams(self):    
         f = self.signal
-        M = len(f)
-        n = int(log(M)/log(2)+0.5)
-        MM = 2**n
-        if (M > MM):
-            f = f[0:MM]
-        elif (M < MM):
-            f = f + [0]*(MM-M)
-        M = MM
+        N = len(f)
+        n = int(log(N)/log(2)+0.5)
+        f = np.append(f, [0]*(2**n-N))
+
+        N = 2**n
         
         (A, a) = mra(f, self.numLevels)
-        A[0] = [sum(A[0])/len(A[0])]*len(A[0])
+        A[0] = mean(A[0])
         
-        (nRow, nCol) = (len(A), len(A[0])) 
-        NN = int(nCol/2. + 0.5)
-        delta_w = 2*pi/(nCol-1)
-        w = linspace(0, delta_w*(NN-1), num=NN)
+        delta_w = 2*pi/(N-1)
+        w = linspace(0, delta_w*(N/2-1), num=N/2)
         
-        self.params = [f,A,w,NN,M]
+        self.params = [f,A,w,N]
     ############################################################################  
     # Updates the plots when anything is changed
     #
@@ -92,7 +87,7 @@ class MRAWindow(FourierWindow):
             self.updateParams()
         self.signalChanged = False
         
-        [f,A,w,NN,M] = self.params
+        [f,A,w,N] = self.params
         
         s = zeros(len(f))
         if self.mode.get() == 'Cumulative Reconstruction':
@@ -101,8 +96,8 @@ class MRAWindow(FourierWindow):
         else: s = A[self.level.get()+1]   
 
         FF = fft.fft(s)
-        FF = abs(FF[:NN])
-        t = arange(M)
+        FF = abs(FF[:N/2])
+        t = arange(N)
         
         lines = self.lines
         axes = self.axes
