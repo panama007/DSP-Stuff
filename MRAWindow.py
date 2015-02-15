@@ -4,7 +4,7 @@ from helper_functions import *
 class MRAWindow(FourierWindow):
         
     def __init__(self, root):
-        self.numLevels=8
+        self.numLevels=10
         self.signalChanged=True
         
         self.folder = 'signals/'
@@ -18,15 +18,16 @@ class MRAWindow(FourierWindow):
     #
     ############################################################################   
     def makeLeftPane(self):
-        levelTexts = ['Level %i'%i for i in range(-1,8)]
-        levelVals = range(-1,8)
+        levelTexts = ['Level %i'%i for i in range(-1,self.numLevels)]
+        levelVals = range(-1,self.numLevels)
     
+        varTitles = ['Mode', 'Levels']
         varDTypes = [StringVar, IntVar]
         varDefaults = ['Cumulative Reconstruction', 7]
         varTexts = [['Cumulative Reconstruction', 'Arbitrary Reconstruction', 'Decomposition'], levelTexts]
         varVals = [['Cumulative Reconstruction', 'Arbitrary Reconstruction', 'Decomposition'], levelVals]
         
-        optionsSpecs = [varDTypes, varDefaults, varTexts, varVals]
+        optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
         
         
         self._makeLeftPane(optionsSpecs, True)

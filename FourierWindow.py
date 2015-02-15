@@ -55,7 +55,7 @@ class FourierWindow(Frame):
                     variable=filename, value=f, command=self.signalFromFile)
         
         if optionsSpecs:
-            [varDTypes, varDefaults, varTexts, varVals] = optionsSpecs
+            [varTitles, varDTypes, varDefaults, varTexts, varVals] = optionsSpecs
             numOptions = len(optionsSpecs[0])
 
             self.options = []
@@ -65,9 +65,10 @@ class FourierWindow(Frame):
                 self.options[i].set(varDefaults[i])
             
             for i in range(numOptions):
-
+                l = Label(leftPane, text=varTitles[i])
+                l.pack(fill=X, pady=(30,0), padx=5)
                 frame = Frame(leftPane)
-                frame.pack(fill=BOTH,pady=30,padx=5)
+                frame.pack(fill=BOTH,pady=(0,30),padx=5)
                 
 
                 for j in range(len(varTexts[i])):
@@ -80,7 +81,7 @@ class FourierWindow(Frame):
         rightPane = Frame(self.master)
 
         plotFrames = [Frame(rightPane) for i in range(numPlots)] 
-        figs = [Figure(figsize=(4,3)) for i in range(numPlots)]
+        figs = [Figure(figsize=(2,2)) for i in range(numPlots)]
         axes = [fig.add_subplot(111) for fig in figs]
         self.axes = axes
         
