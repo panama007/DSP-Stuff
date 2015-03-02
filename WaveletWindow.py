@@ -68,19 +68,19 @@ class WaveletWindow(FourierWindow):
         M = len(data)
         t = arange(M)
         
-        if self.signalChanged: 
-            self.cwt= zeros((self.maxScale.get(),M), complex64)
-            omega= array(range(0,M/2)+range(-M/2,0))*(2.0*pi/M)
-            datahat=fft.fft(data)
+        #if self.signalChanged: 
+        self.cwt= zeros((self.maxScale.get(),M), complex64)
+        omega= array(range(0,M/2)+range(-M/2,0))*(2.0*pi/M)
+        datahat=fft.fft(data)
 
 
-            for scale in range(self.maxScale.get()):
-                s_omega = omega*scale
-                psihat=self.wf(s_omega)
-                psihat = psihat *  sqrt(2.0*pi*scale)
-                convhat = psihat * datahat
-                W    = fft.ifft(convhat)
-                self.cwt[scale,0:M] = W     
+        for scale in range(self.maxScale.get()):
+            s_omega = omega*scale
+            psihat=self.wf(s_omega)
+            psihat = psihat *  sqrt(2.0*pi*scale)
+            convhat = psihat * datahat
+            W    = fft.ifft(convhat)
+            self.cwt[scale,0:M] = W     
             
         self.signalChanged = False
         
@@ -88,7 +88,7 @@ class WaveletWindow(FourierWindow):
         lines = self.lines
                 
         # 2-d coefficient plot
-        plotcwt = abs(self.cwt)
+        plotcwt = abs(self.cwt)**2
         #plotcwt=clip(cwt, 0., 1000.)
         axes[1].cla()
         axes[1].imshow(plotcwt,aspect='auto')

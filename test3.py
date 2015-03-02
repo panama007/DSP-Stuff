@@ -333,7 +333,7 @@ if __name__=="__main__":
     notes=16
     scaling="linear" #or "linear"
     #scaling="linear"
-    plotpower2d=False
+    plotpower2d=True
 
     # set up some data
     Ns=1024*2
@@ -346,8 +346,8 @@ if __name__=="__main__":
     B=np.sin(2.0*np.pi*x/32.0)
     A[512:768]+=B[0:256]
     
-    A=np.loadtxt('signals/G31722.dat')
-    A/=max(A)
+    #A=np.loadtxt('signals/Superposition of two sinusoidals with exponential decay.dat')
+    #A/=max(A)
     
     # Wavelet transform the data
     cw=wavelet(A,maxscale,notes,scaling=scaling)

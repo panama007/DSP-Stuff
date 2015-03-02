@@ -67,6 +67,7 @@ class FourierWindow(Frame):
             for i in range(numOptions):
                 l = Label(leftPane, text=varTitles[i])
                 l.pack(fill=X, pady=(30,0), padx=5)
+
                 frame = Frame(leftPane)
                 frame.pack(fill=BOTH,pady=(0,30),padx=5)
                 
@@ -74,7 +75,9 @@ class FourierWindow(Frame):
                 for j in range(len(varTexts[i])):
                     rb = Radiobutton(frame, text=varTexts[i][j], variable=self.options[i], value=varVals[i][j], command=self.updatePlots)
                     rb.grid(row=j+1,sticky=W,padx=(5,0))
-            
+                        
+                
+        self.leftPane = leftPane    
         self.master.add(leftPane)    
         
     def _makeRightPane(self, numPlots, varValues=[]):
@@ -122,7 +125,7 @@ class FourierWindow(Frame):
             varsFrame.columnconfigure(1, weight=1)                       
             varsFrame.pack(fill=X)
                
-        
+        self.rightPane = rightPane
         self.master.add(rightPane)
          
     def initSignals(self): pass

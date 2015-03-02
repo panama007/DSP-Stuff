@@ -152,7 +152,8 @@ class Cwt:
         """
         returns square of wavelet coefficient array
         """
-        return (self.cwt* NP.conjugate(self.cwt)).real
+        #return (self.cwt* NP.conjugate(self.cwt)).real
+        return abs(self.cwt)**2
     def getscales(self):
         """
         returns array containing scales used in transform

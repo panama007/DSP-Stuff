@@ -1,4 +1,5 @@
 from FourierWindow import *
+import pywt
 from helper_functions import *
 
 class MRAWindow(FourierWindow):
@@ -20,21 +21,50 @@ class MRAWindow(FourierWindow):
     def makeLeftPane(self):
         levelTexts = ['Level %i'%i for i in range(-1,self.numLevels)]
         levelVals = range(-1,self.numLevels)
+        
+        wavelets = pywt.wavelist()
     
-        varTitles = ['Mode', 'Levels']
-        varDTypes = [StringVar, IntVar]
-        varDefaults = ['Cumulative Reconstruction', 7]
-        varTexts = [['Cumulative Reconstruction', 'Arbitrary Reconstruction', 'Decomposition'], levelTexts]
-        varVals = [['Cumulative Reconstruction', 'Arbitrary Reconstruction', 'Decomposition'], levelVals]
+        varTitles = ['Mode', 'Levels']#, 'Wavelets']
+        varDTypes = [StringVar, IntVar]#, StringVar]
+        varDefaults = ['Cumulative Reconstruction', 7]#, 'db1']
+        varTexts = [['Cumulative Reconstruction', 'Arbitrary Reconstruction', 'Decomposition'], levelTexts]#, wavelets]
+        varVals = [['Cumulative Reconstruction', 'Arbitrary Reconstruction', 'Decomposition'], levelVals]#, wavelets]
         
         optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
         
-        
         self._makeLeftPane(optionsSpecs, True)
+
+
+
+        l = Label(self.leftPane, text='Wavelets')
+        l.pack(fill=X, pady=(30,0), padx=5)
+
+        dic = {'Haar':'haar', 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
+            'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}
+        self.dic=dic
+        self.family = StringVar()
+        self.family.set(dic.keys()[0])
+        self.wavelet = StringVar()
+        self.wavelet.set(pywt.wavelist(dic[self.family.get()])[0])
+
+        families = OptionMenu(self.leftPane, self.family, *dic.keys(), command=self.updateFamily)
+        families.pack(fill=BOTH,pady=(0,0),padx=5)
+        wave = OptionMenu(self.leftPane,self.wavelet, *pywt.wavelist(dic[self.family.get()]))
+        wave.pack(fill=BOTH, pady=(0,30),padx=5)
+        
+        self.wave=wave
+        
+        
         
         self.mode = self.options[0]
         self.level = self.options[1]
+        #self.wavelet = self.options[2]
     
+    def updateFamily(self,_):
+        self.wave['menu'].delete(0,'end')
+        for wavelet in pywt.wavelist(self.dic[self.family.get()]):
+            self.wave['menu'].add_command(label=wavelet,command=tk._setit(self.wavelet,wavelet))
+        self.wavelet.set(pywt.wavelist(self.dic[self.family.get()])[0])
     
     ############################################################################  
     # Contains the plots and frequency sliders at the bottom
@@ -112,18 +142,6 @@ class MRAWindow(FourierWindow):
         
         
         
-        
-    s=sqrt(5+2*sqrt(10))
-    d_coeffs = np.array([[1., 1.],
-                [(1+sqrt(3))/4, (3+sqrt(3))/4, (3-sqrt(3))/4, (1-sqrt(3))/4],
-                [(1+sqrt(10)+s)/16, (5+sqrt(10)+3*s)/16, (5-sqrt(10)+s)/8, (5-sqrt(10)-s)/8, (5+sqrt(10)-3*s)/16, (1+sqrt(10)-s)/16],
-                [.325803428051, 1.010945715092, .892200138246, -.039575026236, -.264507167369, .043616300475, .046503601071, -.014986989330],
-                [.226418982583, .853943542705, 1.024326944260, .195766961347, -.342656715382, -.045601131884, .109702658642, -.008826800109, -.017791870102, .004717427938],
-                [.157742432003,.699503814075,1.062263759882,.445831322930,-.319986598891,-.183518064060,.137888092974,.038923209708,-.044663748331,.000783251152,.006756062363,-.001523533805],                [.110099430746,.560791283626,1.031148491636,.664372482211,-.203513822463,-.316835011281,.100846465010,.114003445160,-.053782452590,-.023439941565,.017749792379,.000607514996,-.002547904718,.000500226853],
-                [.076955622108,.442467247152,.955486150427,.827816532422,-.022385735333,-.401658632782,.000668194093,.182076356847,-.024563901046,-.062350206651,.019772159296,.012368844819,-.006887719256,-.000554004548,.000955229711,-.000166137261],
-                [.053850349589,.344834303815,.855349064359,.929545714366,.188369549506,-.414751761802,-.136953549025,.210068342279,.043452675461,-.095647264120,.000354892813,.031624165853,-.006679620227,-.006054960574,.002612967280,.000325814672,-.000356329759,.000055645514],
-                [.037717157593,.266122182794,.745575071487,.973628110734,.397637741770,-.353336201794,-.277109878720,.180127448534,.131602987102,-.100966571196,-.041659248088,.046969814097,.005100436968,-.015179002335,.001973325365,.002817686590,-.000969947840,-.000164709006,.000132354366,-.000018758416]])
-
     def wavedn(f, N):
         M = len(f)
         n = int(log(M)/log(2)+0.5)

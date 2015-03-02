@@ -79,48 +79,7 @@ class DataGeneratorWindow(FourierWindow):
         
         self.frequencies = self.vars
         self.frequencySliders = self.sliders
-    
-    '''
-    def makeRightPane(self):
-        rightPane = Frame(self.master)
-        # creates 3 frames,figures, and axes for the different plots
-        # plus extra frame for sliders
-        panes = [Frame(rightPane) for i in range(4)] 
-        figs = [Figure(figsize=(4,3)) for i in range(3)]
-        a = [fig.add_subplot(111) for fig in figs]
-        self.axes = a
-        
-        #  creates the matplotlib canvasses for the plots 
-        for i in range(3):
-            canvas = FigureCanvasTkAgg(figs[i], master=panes[i])
-            canvas.show()
-            canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-            canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
-        
-        self.frequencies = [DoubleVar() for i in range(10)]
-        self.frequencySliders = []
-        for i in range(10): self.frequencies[i].set(1.)
-        f=panes[-1]                                             #TODO FIX UP THIS MESS
-        # creates 2 sliders for user-input frequencies
-        for i in range(10):
-            #f = Frame(panes[-1])
-            #f.columnconfigure(1, weight=1)
-            l = Label(f, text='f%i: '%i)
-            l.grid(row=i,column=0) 
-            w = Scale(panes[-1],from_=0.1, to=10, resolution=0.01, 
-                orient=HORIZONTAL, command=(lambda x: self.updatePlots()), variable=self.frequencies[i])
-            w.grid(row=i,column=1, sticky=N+S+E+W)
-            #f.pack(side=TOP)
-            self.frequencySliders.append([l,w])
-        # only let the sliders expand, labels same size
-        f.columnconfigure(1, weight=1)                          #/mess
-        
-        for p in panes[:-1]:
-            p.pack(side=TOP, fill=BOTH, expand=1)
-        f.pack(fill=X)
-        
-        return rightPane 
-    '''    
+      
     ############################################################################  
     # Initializes the signals in the plots
     #
