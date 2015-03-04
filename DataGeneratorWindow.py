@@ -75,7 +75,7 @@ class DataGeneratorWindow(FourierWindow):
         varDefaults = [1]*10
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane(3,varValues)
+        self._makeRightPane((3,1),varValues)
         
         self.frequencies = self.vars
         self.frequencySliders = self.sliders

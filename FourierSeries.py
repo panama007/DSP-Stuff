@@ -17,12 +17,10 @@ class Function:
 f1 = Function(lambda x: np.where(np.sin(x)>0, np.sqrt(np.sin(x)), 0.), (-0.5, 1.5), 2*np.pi, r'$f_1(x)=\sqrt{sin(x)}$')
 f2 = Function(lambda x: np.where(np.abs(np.mod(x-1,2)) < 1, np.mod(x-1,2), -1), (-1.5, 1.5), 2, '$f_2(x)= x-1 \ \ mod\ \ 2$\n  $-1\ : x\in[2n,2n+1]$')
 
-#@memoize
 def cn(x, y, n, period):
     c = y * np.exp(-1j * 2. * np.pi * n * x / period)
     return c.sum()/c.size
     
-#@memoize
 def fSeries(x, y, Nh, period):
     global gibbs
     rng = np.arange(0., Nh)

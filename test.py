@@ -1,17 +1,19 @@
-from Tkinter import *
+import pywt
+import matplotlib.pyplot as plt
 
-master = Tk()
+x = range(100)
 
-def pipi(a):
-    print a
+m = pywt.wavedec(x, 'db2')
 
-variable = StringVar(master)
-variable.set("0") # default value
+print len(m)
+m[-2] = [0]*len(m[-2])
 
-x = [[str(i), "my option " + str(i)] for i in xrange(100)]
-w = OptionMenu(master, variable, *x, command=pipi)
-w.pack()
+plt.plot(pywt.waverec(m,'db2'))
 
-#print variable.get()
 
-mainloop()
+
+
+
+
+
+plt.show()

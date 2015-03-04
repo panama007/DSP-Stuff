@@ -1,6 +1,6 @@
 from math import sqrt, log, pi
 import numpy as np
-#from numpy.fft import fft
+from numpy.fft import fft
 
 
 s=sqrt(5+2*sqrt(10))

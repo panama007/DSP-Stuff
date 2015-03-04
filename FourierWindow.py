@@ -1,6 +1,8 @@
 import numpy as np
 from numpy import *
 
+import pywt
+
 import os
 
 import matplotlib
@@ -80,11 +82,14 @@ class FourierWindow(Frame):
         self.leftPane = leftPane    
         self.master.add(leftPane)    
         
-    def _makeRightPane(self, numPlots, varValues=[]):
+    def _makeRightPane(self, plots, varValues=[]):
         rightPane = Frame(self.master)
 
-        plotFrames = [Frame(rightPane) for i in range(numPlots)] 
-        figs = [Figure(figsize=(2,2)) for i in range(numPlots)]
+        numPlots = plots[0]*plots[1]
+        plotFrame = Frame(rightPane)
+        plotFrame.pack(fill=BOTH, expand=1)
+        plotFrames = [Frame(plotFrame) for i in range(numPlots)] 
+        figs = [Figure(figsize=(1,1)) for i in range(numPlots)]
         axes = [fig.add_subplot(111) for fig in figs]
         self.axes = axes
         
@@ -95,8 +100,13 @@ class FourierWindow(Frame):
             canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
             canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
             
-        for p in plotFrames:
-            p.pack(side=TOP, fill=BOTH, expand=1)
+        for c in range(plots[1]):
+            plotFrame.columnconfigure(c, weight=1)
+            for r in range(plots[0]):
+                plotFrame.rowconfigure(r, weight=1)
+                p = plotFrames[c*plots[1]+r]
+                p.grid(row=r, column=c, sticky=N+S+E+W)
+
         
         # This part below takes care of the sliders. It stores the pointers at
         #   self.sliders and self.vars

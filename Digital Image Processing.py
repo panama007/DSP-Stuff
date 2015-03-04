@@ -115,7 +115,7 @@ def radiofunc(label):                                                           
 radio.on_clicked(radiofunc)                                                            # attaches the "radiofunc" to our radio buttons.
     
 
-ax.imshow(imag,cmap='gray',vmin=0,vmax=255,origin='lower')
+ax.imshow(imag,cmap='gray',vmin=0,vmax=255)#,origin='lower')
 ax.set_title("Image")
 
 imag_freq = np.fft.fft2(imag)
@@ -124,7 +124,7 @@ imag_freq = np.fft.fft2(imag)
 imag_freq = np.fft.fftshift(imag_freq)
 imag_freq2 = abs(imag_freq)
 imag_freq2 = np.log10(imag_freq2)
-ax2.imshow(imag_freq2,cmap='gray',origin='lower')
+ax2.imshow(imag_freq2,cmap='gray')#,origin='lower')
 ax2.set_title("2D FFT of Image")
 
 fil = create_filter(512,20,0,"lowpass")

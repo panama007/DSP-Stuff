@@ -1,12 +1,10 @@
-#from pywt import *
-
 from FourierWindow import *
-from helper_functions import *
+
 
 class WaveletWindow(FourierWindow):
         
     def __init__(self, root):
-        self.folder = 'signals/'
+        self.folder = 'signals2/'
         self.filenames = os.listdir(self.folder)
     
         FourierWindow.__init__(self, root)
@@ -32,15 +30,48 @@ class WaveletWindow(FourierWindow):
         varDefaults = [128,1]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane(2, varValues)
+        self._makeRightPane((2,1), varValues)
         
         self.maxScale = self.vars[0]
         
+        l = Label(self.leftPane, text='Wavelets')
+        l.pack(fill=X, pady=(30,0), padx=5)
+
+        dic = {'Haar':'haar', 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
+            'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}
+        self.dic=dic
+        self.family = StringVar()
+        self.family.set('Daubechies')
+        self.wavelet = StringVar()
+        self.wavelet.set('db4')
+
+        familyMenu = OptionMenu(self.leftPane, self.family, *dic.keys(), command=self.updateFamily)
+        familyMenu.pack(fill=BOTH,pady=(0,0),padx=5)
+        waveletMenu = OptionMenu(self.leftPane,self.wavelet, *pywt.wavelist(dic[self.family.get()]), command=(lambda x : self.updatePlots()))
+        waveletMenu.pack(fill=BOTH, pady=(0,30),padx=5)
+        
+        self.waveletMenu=waveletMenu
+        
+    
+    def updateFamily(self,_):
+        self.waveletMenu['menu'].delete(0,'end')
+        def c(val):
+            self.wavelet.set(val)
+            #print val
+            self.updatePlots()
+
+        for wavelet in pywt.wavelist(self.dic[self.family.get()]):
+            #print wavelet
+            self.waveletMenu['menu'].add_command(label=wavelet,command=lambda wavelet=wavelet:c(wavelet))
+
+        self.wavelet.set(pywt.wavelist(self.dic[self.family.get()])[0])
+        self.updatePlots()
+    
     def wf(self, s_omega): # Mexican Hat
 
             a=s_omega**2
             b=s_omega**2/2
-            return a* exp(-b)/1.1529702    
+            return (1-a)* exp(-b)#/1.1529702    
     ############################################################################  
     # Initializes the signals in the plots
     #
