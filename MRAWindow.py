@@ -107,12 +107,12 @@ class MRAWindow(FourierWindow):
             lines.append(l)
 
         self.lines = lines
-        
+        '''
         self.formatAxes(axes[0],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
         self.formatAxes(axes[1],dummy,dummy,'Frequency','Amplitude','FFT of Signal')
         self.formatAxes(axes[2],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
         self.formatAxes(axes[3],dummy,dummy,'Frequency','Amplitude','FFT of Signal')
-        
+        '''
         self.signalFromFile()
         
     def updateParams(self):    
@@ -216,13 +216,9 @@ class MRAWindow(FourierWindow):
         
         lines[0].set_data(t,f)
         lines[1].set_data(w,F2)
-        axes[0].axis([t[0],t[-1],min(f),max(f)])
-        axes[1].axis([min(w),max(w),min(F2),max(F2)])
         
         lines[2].set_data(t,s)
         lines[3].set_data(w,F)
-        axes[2].axis([t[0],t[-1],min(s),max(s)])
-        axes[3].axis([min(w),max(w),min(F),max(F)])
         
         self.formatAxes(axes[0],t,f,'Time (sec)','Amplitude','Original Signal')
         self.formatAxes(axes[1],w,F2,'Frequency','Amplitude','FFT of Original Signal')

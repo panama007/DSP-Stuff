@@ -1,4 +1,5 @@
 from FourierWindow import *
+from scipy import signal
 
 class STFTWindow(FourierWindow):
         
@@ -13,58 +14,68 @@ class STFTWindow(FourierWindow):
     #
     ############################################################################   
     def makeLeftPane(self):
-    
-        varDTypes = [StringVar, BooleanVar]
-        varDefaults = [self.windows[0], False]
-        varTexts = [self.windows, ['Plot 2D', 'Plot 3D']]
-        varVals = [self.windows, [False, True]]
+        '''
+        varTitles = ['Plot Type']
+        varDTypes = [BooleanVar]
+        varDefaults = [False]
+        varTexts = [['Plot 2D', 'Plot 3D']]
+        varVals = [[False, True]]
         
-        optionsSpecs = [varDTypes, varDefaults, varTexts, varVals]
+        optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
+        '''
         
+        self._makeLeftPane([],True)
+
+        #self.plot3D = self.options[0]
         
-        self._makeLeftPane(optionsSpecs, True)
-        
-        self.window = self.options[0]
-        self.mode = self.options[1]
-    
+        l = Label(self.leftPane, text='Windows')
+        l.pack(fill=X, pady=(15,0), padx=5)
+
+        dic = {'Modified Bartlett-Hann':'barthann', 'Bartlett':'bartlett', 'Blackman':'blackman', 'Blackman-Harris':'blackmanharris', 
+        'Bohman':'bohman', 'Rectangular':'boxcar', 'Dolph-Chebyshev':'chebwin', 'Cosine':'cosine', 'Flat Top':'flattop', 'Hamming':'hamming',
+        'Hann':'hann', 'Nutall':'nuttall', 'Parzen':'parzen', 'Triangular':'triang'}
+        self.dic=dic
+        self.window = StringVar()
+        self.window.set('Rectangular')
+
+        windowMenu = OptionMenu(self.leftPane, self.window, *dic.keys(), command=(lambda x: self.updatePlots()))
+        windowMenu.config(width=20)
+        windowMenu.pack(fill=BOTH,pady=(0,0),padx=5)
+                
     
     ############################################################################  
     # Contains the plots and frequency sliders at the bottom
     #
     ############################################################################    
     def makeRightPane(self):
-        varNames = ['Std. Dev.', 'Center']
-        varLimits = [(10,50), (0,200)]
-        varRes = [0.1,0.1]
-        varDTypes = [DoubleVar,DoubleVar]
+        varNames = ['Width', 'Center']
+        varLimits = [(1,1024), (0,1024)]
+        varRes = [1,1]
+        varDTypes = [IntVar,IntVar]
         varDefaults = [10,0]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane(4, varValues)
+        self._makeRightPane((2,2), varValues)
         
-        self.stdDev = self.vars[0]
+        self.width = self.vars[0]
         self.center = self.vars[1]
         
-    def wf(self, s_omega): # Mexican Hat
 
-            a=s_omega**2
-            b=s_omega**2/2
-            return a* exp(-b)/1.1529702    
     ############################################################################  
     # Initializes the signals in the plots
     #
     ############################################################################    
     def initSignals(self):        
-        lines = [0]*1
-        self.lines = lines
         axes = self.axes
-        
+        lines = []
         dummy = [0]
-        lines[0], = axes[0].plot(dummy)
-        
-        self.formatAxes(axes[0],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
-        self.formatAxes(axes[1],dummy,dummy,'Time (sec)','Scale','Scalogram')
-        
+        for axis in axes:
+            l,=axis.plot(dummy)
+            lines.append(l)
+        l,=axes[0].plot(dummy, color='red')
+        lines.append(l)
+        self.lines = lines
+
         self.signalFromFile()
 
     ############################################################################  
@@ -74,41 +85,42 @@ class STFTWindow(FourierWindow):
     
     def updatePlots(self):
         data = self.signal
-        M = len(data)
-        t = arange(M)
+        N = len(data)
+        t = arange(N)
+        delta_w = 2*pi/(N-1)
+        w = linspace(0, delta_w*(N/2-1), num=N/2)
+        F = abs(fft.fft(data)[:N/2])
         
-        if self.signalChanged: 
-            self.cwt= zeros((self.maxScale.get(),M), complex64)
-            omega= array(range(0,M/2)+range(-M/2,0))*(2.0*pi/M)
-            datahat=fft.fft(data)
-
-
-            for scale in range(self.maxScale.get()):
-                s_omega = omega*scale
-                psihat=self.wf(s_omega)
-                psihat = psihat *  sqrt(2.0*pi*scale)
-                convhat = psihat * datahat
-                W    = fft.ifft(convhat)
-                self.cwt[scale,0:M] = W     
-            
-        self.signalChanged = False
+        width = self.width.get()
+        center = self.center.get()
         
-        axes = self.axes       
+        print width, center, (center-width/2), (N-center-width/2)
+        win = eval('signal.%s(%i)'%(self.dic[self.window.get()],width))
+        win = np.append(np.append([0]*N,win),[0]*N)
+        win = win[N+width/2-center:2*N+width/2-center]
+        
+        win_data = win*data
+        
+        win_F = abs(fft.fft(win_data)[:N/2])
+        
         lines = self.lines
-                
-        # 2-d coefficient plot
-        plotcwt = abs(self.cwt)
-        #plotcwt=clip(cwt, 0., 1000.)
-        axes[1].cla()
-        axes[1].imshow(plotcwt,aspect='auto')
+        axes = self.axes
         
         lines[0].set_data(t,data)
-        axes[0].axis([0,len(data),min(data),max(data)])
-        axes[1].axis([0,len(data),0,self.maxScale.get()])
+        lines[4].set_data(t,win)
+        lines[1].set_data(w,F)
+        lines[2].set_data(t,win_data)
+        lines[3].set_data(w,win_F)
+        
+        self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude','Original Signal')
+        self.formatAxes(axes[1],w,F,'Frequency','Magnitude','FFT of Original Signal')
+        self.formatAxes(axes[2],t,win_data,'Time (sec)','Amplitude','Windowed Signal')
+        self.formatAxes(axes[3],w,win_F,'Frequency','Magnitude','FFT of Windowed Signal')
+
         
         for axis in axes:
             axis.get_figure().canvas.draw_idle()
-  
+        
         
 
     

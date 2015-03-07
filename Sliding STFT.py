@@ -66,7 +66,7 @@ def transform_complex(line):
 
 def choose_signal(i):
     global y, signalname
-    with open('signals/'+filenames[i], 'rb') as f:
+    with open('signals2/'+filenames[i], 'rb') as f:
         lines = map(transform_complex, f)
         y = np.loadtxt(lines, dtype=np.complex128)
     y /= max(abs(y))
