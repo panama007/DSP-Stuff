@@ -7,7 +7,7 @@ class MRAWindow(FourierWindow):
         self.numLevels=10
         self.signalChanged=True
         
-        self.folder = 'signals2/'
+        self.folder = 'signals/'
         self.filenames = os.listdir(self.folder)
     
         FourierWindow.__init__(self, root)
