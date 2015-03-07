@@ -71,7 +71,7 @@ class WaveletWindow(FourierWindow):
 
             a=s_omega**2
             b=s_omega**2/2
-            return (1-a)* exp(-b)#/1.1529702    
+            return a* exp(-b)*2/(3**.5*pi**.25)   
     ############################################################################  
     # Initializes the signals in the plots
     #

@@ -1,88 +1,6 @@
 from FourierWindow import *
 
 
-def wavedn(f, N, wave):
-    M = len(f)
-    n = int(log(M)/log(2)+0.5)
-    c = wave#[N/2-1]
-    clr = c[::-1]
-    for j in range(0,N,2):
-        clr[j] = -clr[j]
-    a = list(f)
-    for k in range(n,0,-1):
-        m = 2**(k-1)
-        x = np.zeros(m)
-        y = np.zeros(m)
-        k2 = [0]*N
-        for i in range(m):
-            for j in range(N):
-                k2[j] = 2*i+j+1;
-                while k2[j] > 2*m:
-                    k2[j]=k2[j]-2*m
-            z = [a[l-1] for l in k2]
-            x[i] = np.dot(c,z)
-            y[i] = np.dot(clr,z)
-        x = x/2
-        y = y/2
-        a[0:m] = x
-        a[m:2*m] = y
-    return a
-    
-def iwavedn(a, N, wave):
-    M = len(a)
-    f = [0]*M
-    n = int(log(M)/log(2)+0.5)
-    c = wave#[N/2-1]
-    f[0] = a[0]
-    c1 = [[0]*(N/2),[0]*(N/2)]
-    c2 = [[0]*(N/2),[0]*(N/2)]
-    for j in range(N/2):
-        c1[0][j] = -c[2*j+1]
-        c1[1][j] = c[2*j]
-        c2[0][j] = c[N-2*j-2]
-        c2[1][j] = c[N-2*j-1]
-
-    for k in range(n):
-        m = 2**k;
-        k2 = [0]*(N/2)
-        x = np.zeros(2*m)
-        y = np.zeros(2*m)
-        for i in range(m):
-            for j in range(N/2):
-                k2[j] = m+i-N/2+j+2;
-                while k2[j] < m+1:
-                    k2[j] = k2[j] + m
-            z = [a[l-1] for l in k2]
-            x[2*i:2*i+2] = [np.dot(c1[0],z), np.dot(c1[1],z)]
-            zz = [f[l-m-1] for l in k2]
-            y[2*i:2*i+2] = [np.dot(c2[0],zz), np.dot(c2[1],zz)]
-        f[0:2*m] = x+y
-    return f
-
-def mra(f, N, wave):
-    
-    M = len(f)
-    n = int(log(M)/log(2)+0.5)
-    #print N, n, len(wave)
-    MM = 2**n
-    f = np.append([0]*(MM-M),f)
-    M = MM
-    a = wavedn(f,N, wave)
-    #print MM,N,len(a)
-    b = [0]*M
-    b[0] = a[0]
-    A = []
-    A.append(iwavedn(b,N, wave))
-
-    for i in range(n):
-        b = [0]*M
-        b[2**i:2**(i+1)] = a[2**i:2**(i+1)]
-
-        A.append(iwavedn(b,N, wave))
-
-
-    return (A, a)
-
 class MRAWindow(FourierWindow):
         
     def __init__(self, root):
@@ -108,17 +26,19 @@ class MRAWindow(FourierWindow):
         varTitles = ['Mode', 'Levels']
         varDTypes = [StringVar, IntVar]
         varDefaults = ['Cumulative Reconstruction', -1]
-        varTexts = [['Cumulative Reconstruction', 'Arbitrary Reconstruction', 'Decomposition'], levelTexts]
-        varVals = [['Cumulative Reconstruction', 'Arbitrary Reconstruction', 'Decomposition'], levelVals]
-        
+        varTexts = [['Cumulative Reconstruction', 'Decomposition'], levelTexts]
+        varVals = [['Cumulative Reconstruction', 'Decomposition'], levelVals]
+        # , 'Arbitrary Reconstruction'
         optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
         
         self._makeLeftPane(optionsSpecs, True)
-
+        
+        self.mode = self.options[0]
+        self.level = self.options[1]
 
 
         l = Label(self.leftPane, text='Wavelets')
-        l.pack(fill=X, pady=(30,0), padx=5)
+        l.pack(fill=X, pady=(15,0), padx=5)
 
         dic = {'Haar':'haar', 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
             'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}
@@ -131,15 +51,26 @@ class MRAWindow(FourierWindow):
         familyMenu = OptionMenu(self.leftPane, self.family, *dic.keys(), command=self.updateFamily)
         familyMenu.pack(fill=BOTH,pady=(0,0),padx=5)
         waveletMenu = OptionMenu(self.leftPane,self.wavelet, *pywt.wavelist(dic[self.family.get()]), command=(lambda x : self.updatePlots()))
-        waveletMenu.pack(fill=BOTH, pady=(0,30),padx=5)
+        waveletMenu.pack(fill=BOTH, pady=(0,15),padx=5)
         
         self.waveletMenu=waveletMenu
         
+        table = Frame(self.leftPane)
+        table.pack(fill=BOTH, pady=15, padx=5)
+        Label(table, text="Energy Table").grid(row=0,column=0,columnspan=3)
+        Label(table, text="Level").grid(row=1,column=0)
+        Label(table, text="Energy").grid(row=1,column=1)
+        Label(table, text="% of Total Energy").grid(row=1,column=2)
         
-        
-        self.mode = self.options[0]
-        self.level = self.options[1]
-        #self.wavelet = self.options[2]
+        self.table = []
+        for i in range(len(levelVals)+1):
+            row = []
+            for j in range(3):
+                tv = StringVar()
+                l = Label(table, textvariable=tv)
+                l.grid(row=i+2,column=j)
+                row.append([l,tv])
+            self.table.append(row)     
     
     def updateFamily(self,_):
         self.waveletMenu['menu'].delete(0,'end')
@@ -195,6 +126,54 @@ class MRAWindow(FourierWindow):
         
         self.params = [f,w,m]
 
+    def updateLevels(self):
+        l = self.level.get()
+        max = pywt.dwt_max_level(len(self.signal),pywt.Wavelet(self.wavelet.get()))
+        
+        if l > max:
+            self.level.set(max-1)
+            
+        #mode = self.mode.get()
+        for i in range(21):
+            if i <= max:
+                self.radioButtons[1][i].grid()
+            else:
+                self.radioButtons[1][i].grid_remove()
+        
+    def updateEnergyTable(self): #TODO, clean this up
+        max = pywt.dwt_max_level(len(self.signal),pywt.Wavelet(self.wavelet.get()))
+        [f,w,m] = self.params
+
+        
+        for i in range(22):
+            row = self.table[i]
+            
+            if i <= max+1:
+                subm = list(m)
+                if i != max+1:  
+                    for j in range(max):
+                        if j != i:
+                            subm[j] = [0]*len(m[j])
+                subsignal = pywt.waverec(subm,self.wavelet.get())
+                
+                
+                for j in range(3):
+                    row[j][0].grid()
+                    if j == 0:
+                        if i == max+1:
+                            row[j][1].set('Total')
+                        else:
+                            row[j][1].set('Levels %i'%(i-1))
+                    elif j == 1:
+                        row[j][1].set('%f'%sum(subsignal**2))
+                    else:
+                        percent = (100*sum(subsignal**2)/sum(f**2)).real
+                        row[j][1].set('%f %%'%percent)
+            else:
+                for j in range(3):
+                    row[j][0].grid_remove()
+                
+    
     ############################################################################  
     # Updates the plots when anything is changed
     #
@@ -204,15 +183,21 @@ class MRAWindow(FourierWindow):
 
         #if self.signalChanged: 
         self.updateParams()
-        self.signalChanged = False
+        self.updateLevels()
+        self.updateEnergyTable()
+        #self.signalChanged = False
         
         [f,w,m] = self.params
         #print m[self.level.get()+1]
         
+        
+        
         if self.mode.get() == 'Cumulative Reconstruction':
+            levelsText = "Level(s) -1"+''.join(map(lambda i: '+%i'%i, range(self.level.get()+1)))
             for i in range(self.level.get()+2,len(m)):
                 m[i] = [0]*len(m[i])
-        else: 
+        else:
+            levelsText = "Level %i"%(self.level.get()+1)
             for i in range(len(m)):
                 if i != self.level.get()+1:
                     m[i] = [0]*len(m[i])
@@ -239,6 +224,10 @@ class MRAWindow(FourierWindow):
         axes[2].axis([t[0],t[-1],min(s),max(s)])
         axes[3].axis([min(w),max(w),min(F),max(F)])
         
+        self.formatAxes(axes[0],t,f,'Time (sec)','Amplitude','Original Signal')
+        self.formatAxes(axes[1],w,F2,'Frequency','Amplitude','FFT of Original Signal')
+        self.formatAxes(axes[2],t,s,'Time (sec)','Amplitude',levelsText)
+        self.formatAxes(axes[3],w,F,'Frequency','Amplitude','FFT of '+levelsText)
         
         for axis in self.axes:
             axis.get_figure().canvas.draw_idle()

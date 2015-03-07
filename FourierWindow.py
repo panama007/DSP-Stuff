@@ -46,7 +46,7 @@ class FourierWindow(Frame):
             fileSelector = Menubutton(leftPane,text='Signal Select')
 
             fileSelector.configure(width=10)
-            fileSelector.pack(side=TOP, pady=30, padx=10) 
+            fileSelector.pack(side=TOP, pady=15, padx=10) 
             
             
             fileSelector.menu = Menu(fileSelector, tearoff=0)
@@ -61,22 +61,27 @@ class FourierWindow(Frame):
             numOptions = len(optionsSpecs[0])
 
             self.options = []
+            self.radioButtons = []
 
             for i in range(numOptions):
                 self.options.append(varDTypes[i]())
                 self.options[i].set(varDefaults[i])
             
             for i in range(numOptions):
+                self.radioButtons.append([])
+            
                 l = Label(leftPane, text=varTitles[i])
-                l.pack(fill=X, pady=(30,0), padx=5)
+                l.pack(fill=X, pady=(15,0), padx=5)
 
                 frame = Frame(leftPane)
-                frame.pack(fill=BOTH,pady=(0,30),padx=5)
+                frame.pack(fill=BOTH,pady=(0,15),padx=5)
                 
 
                 for j in range(len(varTexts[i])):
                     rb = Radiobutton(frame, text=varTexts[i][j], variable=self.options[i], value=varVals[i][j], command=self.updatePlots)
                     rb.grid(row=j+1,sticky=W,padx=(5,0))
+                    
+                    self.radioButtons[i].append(rb)
                         
                 
         self.leftPane = leftPane    

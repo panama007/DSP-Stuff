@@ -1,19 +1,18 @@
-import pywt
 import matplotlib.pyplot as plt
+import numpy as np
+import pywt
 
-x = range(100)
+for j in range(19,20):
+    print "hi"
+    plt.figure()
+    filters = pywt.Wavelet('db%i'%(j+1)).filter_bank
 
-m = pywt.wavedec(x, 'db2')
+    F = [np.fft.ifft(filters[i]) for i in range(4)]
+    F = [F[i][:len(F[i])/2] for i in range(4)]
+    F = [np.abs(len(filters[i])*F[i])**2/2 for i in range(4)]
 
-print len(m)
-m[-2] = [0]*len(m[-2])
-
-plt.plot(pywt.waverec(m,'db2'))
-
-
-
-
-
-
-
+    plt.plot(F[0])
+    plt.plot(F[1])
+    plt.plot(F[0]**2)
+    plt.plot(F[0]+F[1])
 plt.show()
