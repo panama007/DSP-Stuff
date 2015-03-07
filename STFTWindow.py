@@ -94,7 +94,7 @@ class STFTWindow(FourierWindow):
         width = self.width.get()
         center = self.center.get()
         
-        print width, center, (center-width/2), (N-center-width/2)
+        #print width, center, (center-width/2), (N-center-width/2)
         win = eval('signal.%s(%i)'%(self.dic[self.window.get()],width))
         win = np.append(np.append([0]*N,win),[0]*N)
         win = win[N+width/2-center:2*N+width/2-center]

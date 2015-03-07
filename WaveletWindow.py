@@ -41,11 +41,11 @@ class WaveletWindow(FourierWindow):
     #
     ############################################################################    
     def makeRightPane(self):
-        varNames = ['Max Scale', 'Mult']
-        varLimits = [(1,512), (0.01,5)]
-        varRes = [1,0.01]
-        varDTypes = [IntVar,DoubleVar]
-        varDefaults = [128,1]
+        varNames = ['Max Scale']
+        varLimits = [(1,512)]
+        varRes = [1]
+        varDTypes = [IntVar]
+        varDefaults = [128]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
         self._makeRightPane((2,1), varValues)
