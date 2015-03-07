@@ -1,7 +1,9 @@
 from WaveletWindow import *
 from DataGeneratorWindow import *
 from MRAWindow import *
+from STFTWindow import *
 
+import os
 from ttk import Notebook
 
 root = Tk()
@@ -11,19 +13,23 @@ note = Notebook(root)
 tab1 = Frame(note)
 tab2 = Frame(note)
 tab3 = Frame(note)
+tab4 = Frame(note)
 
 MRAWindow(tab1)
 DataGeneratorWindow(tab2)
 WaveletWindow(tab3)
+STFTWindow(tab4)
 
 note.add(tab1, text = 'MRA Decomposition')
 note.add(tab2, text = 'Data Generator')
 note.add(tab3, text = 'Wavelet Analysis')
+note.add(tab4, text = 'Short-Time Fourier Transform')
 note.pack(fill=BOTH, expand=1)
 
 #w, h = root.winfo_screenwidth(), root.winfo_screenheight()
 #root.geometry("%dx%d+0+0" % (w, h))
-root.wm_state('zoomed')
+if os.name == "nt": root.wm_state('zoomed')
+else: root.attributes('-zoomed', True)
 
 root.mainloop()
 exit()

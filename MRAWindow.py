@@ -197,7 +197,7 @@ class MRAWindow(FourierWindow):
             for i in range(self.level.get()+2,len(m)):
                 m[i] = [0]*len(m[i])
         else:
-            levelsText = "Level %i"%(self.level.get()+1)
+            levelsText = "Level %i"%(self.level.get())
             for i in range(len(m)):
                 if i != self.level.get()+1:
                     m[i] = [0]*len(m[i])

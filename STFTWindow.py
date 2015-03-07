@@ -1,11 +1,9 @@
-
 from FourierWindow import *
-from helper_functions import *
 
-class WaveletWindow(FourierWindow):
+class STFTWindow(FourierWindow):
         
     def __init__(self, root):
-        self.folder = 'signals/'
+        self.folder = 'signals2/'
         self.filenames = os.listdir(self.folder)
     
         FourierWindow.__init__(self, root)

@@ -17,23 +17,7 @@ class WaveletWindow(FourierWindow):
         
         self._makeLeftPane(fileSelector=True) 
     
-    
-    ############################################################################  
-    # Contains the plots and frequency sliders at the bottom
-    #
-    ############################################################################    
-    def makeRightPane(self):
-        varNames = ['Max Scale', 'Mult']
-        varLimits = [(1,512), (0.01,5)]
-        varRes = [1,0.01]
-        varDTypes = [IntVar,DoubleVar]
-        varDefaults = [128,1]
-        varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
-        
-        self._makeRightPane((2,1), varValues)
-        
-        self.maxScale = self.vars[0]
-        
+	'''
         l = Label(self.leftPane, text='Wavelets')
         l.pack(fill=X, pady=(30,0), padx=5)
 
@@ -51,6 +35,22 @@ class WaveletWindow(FourierWindow):
         waveletMenu.pack(fill=BOTH, pady=(0,30),padx=5)
         
         self.waveletMenu=waveletMenu
+    	'''
+    ############################################################################  
+    # Contains the plots and frequency sliders at the bottom
+    #
+    ############################################################################    
+    def makeRightPane(self):
+        varNames = ['Max Scale', 'Mult']
+        varLimits = [(1,512), (0.01,5)]
+        varRes = [1,0.01]
+        varDTypes = [IntVar,DoubleVar]
+        varDefaults = [128,1]
+        varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
+        
+        self._makeRightPane((2,1), varValues)
+        
+        self.maxScale = self.vars[0]
         
     
     def updateFamily(self,_):
