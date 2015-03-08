@@ -214,8 +214,8 @@ class MRAWindow(FourierWindow):
         lines[2].set_data(t,s)
         lines[3].set_data(w,F)
         
-        self.formatAxes(axes[0],t,f,'Time (sec)','Amplitude','Original Signal')
-        self.formatAxes(axes[1],w,F2,'Frequency','Amplitude','FFT of Original Signal')
+        self.formatAxes(axes[0],t,f,'Time (sec)','Amplitude',self.filename.get())
+        self.formatAxes(axes[1],w,F2,'Frequency','Amplitude','FFT of '+self.filename.get())
         self.formatAxes(axes[2],t,s,'Time (sec)','Amplitude',levelsText)
         self.formatAxes(axes[3],w,F,'Frequency','Amplitude','FFT of '+levelsText)
         

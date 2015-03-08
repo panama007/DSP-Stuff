@@ -70,27 +70,26 @@ class DIPWindow(FourierWindow):
         
         axes = self.axes
         
-        axes[0].cla()
-        axes[0].imshow(imag,cmap='gray',vmin=0,vmax=255)
-        
+        for axis in axes:
+            axis.cla()
+                 
         imagF = np.fft.fft2(imag)
         imagF = np.fft.fftshift(imagF)
         imagF2 = np.log10(abs(imagF))
-        
-        axes[1].cla()
-        axes[1].imshow(imagF2,cmap='gray')
-        
         fil = create_filter(len(imag),self.r1.get(),self.r2.get(),self.filterType.get())
-        axes[2].cla()
-        axes[2].imshow(fil, cmap='gray', vmin=0, vmax=1)
-        
         filtered_imag = abs(np.fft.ifft2(np.fft.ifftshift(fil*imagF)))
-        #ax3.set_title("2D FFT of Filter")
-
-        #print fil, filtered_imag, imag
-        axes[3].cla()
+        
+        
+        axes[0].imshow(imag,cmap='gray',vmin=0,vmax=255)
+        axes[1].imshow(imagF2,cmap='gray')        
+        axes[2].imshow(fil, cmap='gray', vmin=0, vmax=1)
         axes[3].imshow(filtered_imag, cmap='gray')#, vmin=0,vmax=255)
-        #ax4.set_title("Filtered Image")
+
+        axes[0].set_title(self.filename.get())
+        axes[1].set_title('2D FFT of Image')
+        axes[2].set_title('Filter')
+        axes[3].set_title('Filtered Image')
+        
         
         for axis in axes:
             axis.get_figure().canvas.draw_idle()

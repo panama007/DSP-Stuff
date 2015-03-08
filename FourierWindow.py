@@ -12,6 +12,7 @@ from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 import Tkinter as tk
+import tkFileDialog
 from Tkinter import *
 
 from scipy import signal
@@ -36,7 +37,7 @@ class FourierWindow(Frame):
             self.folder = 'signals/'
         else:
             self.folder = 'images/'
-        self.filenames = os.listdir(self.folder)
+        self.filenames = np.sort(os.listdir(self.folder))
         
         self.makeLeftPane()
         self.makeRightPane()
@@ -202,4 +203,11 @@ class FourierWindow(Frame):
             if i not in oldFreqs:
                 self.frequencySliders[i][0].grid()
                 self.frequencySliders[i][1].grid() 
+                
+    def file_save(self):
+        f = tkFileDialog.asksaveasfilename(defaultextension=".dat")
+        if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+        np.savetxt(f,self.y)
+        f.close() # `()` was missing.
     

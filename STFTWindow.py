@@ -111,8 +111,8 @@ class STFTWindow(FourierWindow):
         lines[2].set_data(t,win_data)
         lines[3].set_data(w,win_F)
         
-        self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude','Original Signal')
-        self.formatAxes(axes[1],w,F,'Frequency','Magnitude','FFT of Original Signal')
+        self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
+        self.formatAxes(axes[1],w,F,'Frequency','Magnitude','FFT of '+self.filename.get())
         self.formatAxes(axes[2],t,win_data,'Time (sec)','Amplitude','Windowed Signal')
         self.formatAxes(axes[3],w,win_F,'Frequency','Magnitude','FFT of Windowed Signal')
 

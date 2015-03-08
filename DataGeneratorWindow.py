@@ -66,7 +66,9 @@ class DataGeneratorWindow(FourierWindow):
             command=self.updatePlots).grid(row=1,stick=W,padx=5)
             
         self.master.add(leftPane)
-    
+        
+        b = Button(leftPane, text='Save Current Signal', command=self.file_save)
+        b.pack(fill=BOTH, padx=5, pady=15)
     
     ############################################################################  
     # Contains the plots and frequency sliders at the bottom
@@ -137,10 +139,19 @@ class DataGeneratorWindow(FourierWindow):
         if self.decay.get():
             y = y*exp(-0.03*t)       
         y /= max(y) 
+        self.y = y
         S = abs(fft.fftshift(fft.fft(y)))[N/2:]
         
         self.lines[0].set_ydata(y)
         self.lines[1].set_ydata(S)
+        
+        funcName = self.funcText.get()
+        if funcName in self.builtInFunctions.keys(): name = funcName
+        else: name = self.customFunc.get()
+        
+        self.axes[0].set_title(name)
+        self.axes[1].set_title('FFT of '+name)
+        self.axes[1].axis([0,Fs/2,min(S),max(S)])
         
         self.axes[2].cla()
         self.axes[2].specgram(y, Fs=Fs, NFFT=80, noverlap=40)

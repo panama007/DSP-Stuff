@@ -166,8 +166,8 @@ class WaveletWindow(FourierWindow):
         axes[0].axis([0,len(data),min(data),max(data)])
         axes[1].axis([0,len(data),0,self.maxScale.get()])
         
-        self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude','Original Signal')
-        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Frequency','Scale','Scalogram of Original Signal')
+        self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
+        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Frequency','Scale','Scalogram of '+self.filename.get())
         
         for axis in axes:
             axis.get_figure().canvas.draw_idle()
