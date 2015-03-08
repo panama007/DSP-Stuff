@@ -7,8 +7,7 @@ class MRAWindow(FourierWindow):
         self.numLevels=10
         self.signalChanged=True
         
-        self.folder = 'signals/'
-        self.filenames = os.listdir(self.folder)
+        self.signalType = 0
     
         FourierWindow.__init__(self, root)
   
@@ -107,12 +106,7 @@ class MRAWindow(FourierWindow):
             lines.append(l)
 
         self.lines = lines
-        '''
-        self.formatAxes(axes[0],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
-        self.formatAxes(axes[1],dummy,dummy,'Frequency','Amplitude','FFT of Signal')
-        self.formatAxes(axes[2],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
-        self.formatAxes(axes[3],dummy,dummy,'Frequency','Amplitude','FFT of Signal')
-        '''
+
         self.signalFromFile()
         
     def updateParams(self):    

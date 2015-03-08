@@ -5,8 +5,7 @@ from wavelets import *
 class WaveletWindow(FourierWindow):
         
     def __init__(self, root):
-        self.folder = 'signals/'
-        self.filenames = os.listdir(self.folder)
+        self.signalType = 0
         
         self.cwt = {}
         self.plot3D = 0
@@ -104,8 +103,8 @@ class WaveletWindow(FourierWindow):
         lines[0], = axes[0].plot(dummy)
         lines[1] = axes[1].imshow([[0]*1024 for i in range(128)])
         
-        self.formatAxes(axes[0],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
-        self.formatAxes(axes[1],dummy,dummy,'Time (sec)','Scale','Scalogram')
+        #self.formatAxes(axes[0],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
+        #self.formatAxes(axes[1],dummy,dummy,'Time (sec)','Scale','Scalogram')
         
         self.signalFromFile()
 
@@ -166,6 +165,9 @@ class WaveletWindow(FourierWindow):
         lines[0].set_data(t,data)
         axes[0].axis([0,len(data),min(data),max(data)])
         axes[1].axis([0,len(data),0,self.maxScale.get()])
+        
+        self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude','Original Signal')
+        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Frequency','Scale','Scalogram of Original Signal')
         
         for axis in axes:
             axis.get_figure().canvas.draw_idle()

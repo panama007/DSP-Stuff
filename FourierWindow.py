@@ -32,6 +32,12 @@ class FourierWindow(Frame):
         self.master = master
         master.pack(fill=BOTH, expand=1)
 
+        if self.signalType == 0:
+            self.folder = 'signals/'
+        else:
+            self.folder = 'images/'
+        self.filenames = os.listdir(self.folder)
+        
         self.makeLeftPane()
         self.makeRightPane()
             
@@ -153,21 +159,26 @@ class FourierWindow(Frame):
     def formatAxes(self, ax, x, y, xlabel, ylabel, title, spec=False):
         if not spec:
             ax.axis([min(x), max(x), min(y), max(y)])
-        #ax.xaxis.set_label_coords(0.5,-0.12)
+        
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
-        ax.spines['bottom'].set_position('zero')
-        ax.yaxis.set_label_coords(-0.05,0.5)
+        #ax.spines['bottom'].set_position('zero')
+        #ax.spines['bottom'].label='zero'
+        #ax.xaxis.set_label_coords(0.5,-0.01)
+        #ax.yaxis.set_label_coords(-0.05,0.5)
         
     def signalFromFile(self):
         name = self.filename.get()
-        with open(self.folder+name, 'rb') as f:
-            lines = map(lambda line: line.replace(b'+-', b'-'), f)
-            y = loadtxt(lines, dtype=complex128)
-        y /= max(abs(y))
-        self.funcText = name.replace('.dat', '')
-        self.signal = y
+        if self.signalType == 0:
+            with open(self.folder+name, 'rb') as f:
+                lines = map(lambda line: line.replace(b'+-', b'-'), f)
+                y = loadtxt(lines, dtype=complex128)
+            y /= max(abs(y))
+            self.funcText = name.replace('.dat', '')
+            self.signal = y
+        else:
+            self.image = matplotlib.image.imread(self.folder + name)
         
         self.signalChanged=True
         self.updatePlots()

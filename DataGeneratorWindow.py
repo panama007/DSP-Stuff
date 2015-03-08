@@ -11,6 +11,8 @@ class DataGeneratorWindow(FourierWindow):
         frequencies = (n / N * Fs)[:N/2]
         self.params=[N,Fs,Ts,t,n,frequencies]
     
+        self.signalType = 0
+    
         FourierWindow.__init__(self, root)     
         
   
@@ -145,6 +147,8 @@ class DataGeneratorWindow(FourierWindow):
         self.axes[2].axis([0, (N-128)*Ts, min(frequencies), max(frequencies)])
         self.formatAxes(self.axes[2],t,frequencies,'Time (sec)','Frequency (Hz)','Spectrogram',spec=True)
         
+        for fig in self.figs:
+            fig.tight_layout()
         for axis in self.axes:
             axis.get_figure().canvas.draw_idle()
         

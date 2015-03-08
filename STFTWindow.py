@@ -4,8 +4,7 @@ from scipy import signal
 class STFTWindow(FourierWindow):
         
     def __init__(self, root):
-        self.folder = 'signals/'
-        self.filenames = os.listdir(self.folder)
+        self.signalType = 0
     
         FourierWindow.__init__(self, root)
   
