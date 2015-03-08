@@ -42,7 +42,7 @@ class DIPWindow(FourierWindow):
         
     def makeRightPane(self):
         varNames = ['Radius 1', 'Radius 2']
-        varLimits = [(0,512), (0,512)]
+        varLimits = [(0,256), (0,256)]
         varRes = [1,1]
         varDTypes = [IntVar,IntVar]
         varDefaults = [0,0]
@@ -80,14 +80,14 @@ class DIPWindow(FourierWindow):
         axes[1].cla()
         axes[1].imshow(imagF2,cmap='gray')
         
-        fil = create_filter(512,self.r1.get(),self.r2.get(),self.filterType.get())
+        fil = create_filter(len(imag),self.r1.get(),self.r2.get(),self.filterType.get())
         axes[2].cla()
         axes[2].imshow(fil, cmap='gray', vmin=0, vmax=1)
         
         filtered_imag = abs(np.fft.ifft2(np.fft.ifftshift(fil*imagF)))
         #ax3.set_title("2D FFT of Filter")
 
-        print fil, filtered_imag, imag
+        #print fil, filtered_imag, imag
         axes[3].cla()
         axes[3].imshow(filtered_imag, cmap='gray')#, vmin=0,vmax=255)
         #ax4.set_title("Filtered Image")
