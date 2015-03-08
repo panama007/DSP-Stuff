@@ -172,4 +172,7 @@ class WaveletWindow(FourierWindow):
         for axis in axes:
             axis.get_figure().canvas.draw_idle()
   
-    
+if __name__ == "__main__":
+    root = Tk()
+    WaveletWindow(root)
+    root.mainloop()    

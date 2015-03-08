@@ -51,7 +51,7 @@ class FourierWindow(Frame):
         if fileSelector:
             filename = StringVar()
             self.filename = filename
-            filename.set(self.filenames[0])
+            filename.set(self.filenames[-1])
             
             fileSelector = Menubutton(leftPane,text='Signal Select')
 

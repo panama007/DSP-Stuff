@@ -222,5 +222,8 @@ class MRAWindow(FourierWindow):
         for axis in self.axes:
             axis.get_figure().canvas.draw_idle()
         
-  
+if __name__ == "__main__":
+    root = Tk()
+    MRAWindow(root)
+    root.mainloop()  
     
