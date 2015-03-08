@@ -35,9 +35,12 @@ class MRAWindow(FourierWindow):
         self.mode = self.options[0]
         self.level = self.options[1]
 
-
-        l = Label(self.leftPane, text='Wavelets')
-        l.pack(fill=X, pady=(15,0), padx=5)
+        titlePane = Frame(self.leftPane)
+        l = Label(titlePane, text='Wavelets')
+        popup = Button(titlePane, text='?', command=self.popupWavelet)
+        l.pack(fill=BOTH, side=LEFT, expand=1)
+        popup.pack(fill=BOTH, side=LEFT)
+        titlePane.pack(fill=X, pady=(15,0), padx=5)
 
         dic = {'Haar':'haar', 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
             'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}
@@ -70,7 +73,35 @@ class MRAWindow(FourierWindow):
                 l.grid(row=i+2,column=j)
                 row.append([l,tv])
             self.table.append(row)     
-    
+    def popupWavelet(self):
+        popup = Toplevel()
+        fig = Figure(figsize=(5,5))
+        ax0 = fig.add_subplot(211)
+        ax1 = fig.add_subplot(212)
+
+        canvas = FigureCanvasTkAgg(fig, master=popup)
+        canvas.show()
+        canvas.get_tk_widget().pack(fill=BOTH, expand=1)
+        canvas._tkcanvas.pack(fill=BOTH, expand=1)
+        
+        w = pywt.Wavelet(self.wavelet.get())
+        f = w.wavefun()
+        ax0.plot(f[0])
+        ax0.plot(f[1])
+        ax0.legend(['Father Wavelet', 'Mother Wavelet'], fontsize=10)
+        ax0.axis([0,len(f[0]),min(min(f[0]),min(f[1]))-0.1,max(max(f[0]),max(f[1]))+0.1])
+        
+        n = w.dec_len
+        F = abs(np.fft.fft(w.dec_lo)[:n/2+1])**2/2
+        F2 = abs(np.fft.fft(w.dec_hi)[:n/2+1])**2/2
+        ax1.plot(F)
+        ax1.plot(F2)
+        ax1.legend(['Low Pass Filter', 'High Pass Filter'], loc=7, fontsize=10)
+        ax1.axis([0,len(F)-1,min(min(F),min(F2))-0.1,max(max(F),max(F2))+0.1])
+        
+        fig.tight_layout()
+        
+        
     def updateFamily(self,_):
         self.waveletMenu['menu'].delete(0,'end')
         def c(val):

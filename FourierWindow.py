@@ -205,7 +205,7 @@ class FourierWindow(Frame):
                 self.frequencySliders[i][1].grid() 
                 
     def file_save(self):
-        f = tkFileDialog.asksaveasfilename(defaultextension=".dat")
+        f = tkFileDialog.asksaveasfilename(defaultextension='.dat', initialdir='signals/', filetypes=[('Data File','.dat')])
         if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
             return
         np.savetxt(f,self.y)
