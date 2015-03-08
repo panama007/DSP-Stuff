@@ -24,7 +24,7 @@ class STFTWindow(FourierWindow):
         optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
         '''
         
-        self._makeLeftPane([],True)
+        self._makeLeftPane(fileSelector=True)
 
         #self.plot3D = self.options[0]
         

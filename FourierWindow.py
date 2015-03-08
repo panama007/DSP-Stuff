@@ -9,9 +9,12 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
+from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 import Tkinter as tk
 from Tkinter import *
+
+from scipy import signal
 
 class FourierWindow(Frame):    
     
@@ -96,6 +99,7 @@ class FourierWindow(Frame):
         plotFrames = [Frame(plotFrame) for i in range(numPlots)] 
         figs = [Figure(figsize=(1,1)) for i in range(numPlots)]
         axes = [fig.add_subplot(111) for fig in figs]
+        self.figs = figs
         self.axes = axes
         
         #  creates the matplotlib canvasses for the plots 

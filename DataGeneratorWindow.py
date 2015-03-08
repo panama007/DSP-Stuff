@@ -19,7 +19,7 @@ class DataGeneratorWindow(FourierWindow):
     #
     ############################################################################   
     def makeLeftPane(self):
-        pane = Frame(self.master, bg='grey')
+        leftPane = Frame(self.master, bg='grey')
         # create a variable to hold function currently being analyzed
         
         funcText = StringVar()
@@ -35,9 +35,11 @@ class DataGeneratorWindow(FourierWindow):
         self.decay = decay
         decay.set(False)
         
+        Label(leftPane, text='Functions').pack(fill=X, pady=(15,0), padx=5)
         # create a frame to hold the function radiobuttons
-        funcFrame = Frame(pane)
-        funcFrame.pack(fill=BOTH, padx=5, pady=30)
+        funcFrame = Frame(leftPane)
+        funcFrame.pack(fill=BOTH, padx=5, pady=(0,15))
+        
         
         # create all the radiobuttons
         for i in range(len(self.builtInFunctions)):
@@ -52,15 +54,16 @@ class DataGeneratorWindow(FourierWindow):
         eb.grid(row=5,column=1,sticky=E,padx=(0,5))
         
         # create a frame to hold the exponential decay radiobuttons
-        expFrame = Frame(pane)
-        expFrame.pack(fill=BOTH,pady=30,padx=5)
+        Label(leftPane, text='Exponential Decay').pack(fill=X, pady=(15,0), padx=5)
+        expFrame = Frame(leftPane)
+        expFrame.pack(fill=BOTH,pady=(0,15),padx=5)
         # both radiobuttons
         Radiobutton(expFrame, text='Exponential Decay',variable=decay,value=True, 
             command=self.updatePlots).grid(row=0,stick=W,padx=5)
         Radiobutton(expFrame, text='No Exponential Decay',variable=decay,value=False, 
             command=self.updatePlots).grid(row=1,stick=W,padx=5)
             
-        self.master.add(pane)
+        self.master.add(leftPane)
     
     
     ############################################################################  
