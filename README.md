@@ -11,8 +11,8 @@ numpy, matplotlib, scipy, pywt, PIL, Tkinter, python(obvs..)
 This project is to help explain and visualize concepts in digital signal processing.
 ## How to Run
 
-You want to run the "AIO.py" file. It stands for All In One, and as the name implies, displays all the demos. 
-All the other files are also executable by themselves (except FourierWindow.py), if you only want to look at 1 one the demos.
+You want to run the "All In One.py" file. It displays all the demos. 
+All the other files are also executable inbividually (except FourierWindow.py), if you only want to look at 1 one the demos.
 
 In all the demos you will find controls on the left panel, and sometimes sliders at the bottom. The labels/naming should
 make their purpose somewhat clear.
