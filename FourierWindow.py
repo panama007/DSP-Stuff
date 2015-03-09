@@ -38,6 +38,8 @@ class FourierWindow(Frame):
         else:
             self.folder = 'images/'
         self.filenames = np.sort(os.listdir(self.folder))
+        self.len = IntVar()
+        self.len.set(-1)
         
         self.makeLeftPane()
         self.makeRightPane()
@@ -56,7 +58,7 @@ class FourierWindow(Frame):
             fileSelector = Menubutton(leftPane,text='Signal Select')
 
             fileSelector.configure(width=10)
-            fileSelector.pack(side=TOP, pady=15, padx=10) 
+            fileSelector.pack(side=TOP, pady=5, padx=10) 
             
             
             fileSelector.menu = Menu(fileSelector, tearoff=0)
@@ -65,6 +67,14 @@ class FourierWindow(Frame):
             for f in self.filenames:
                 fileSelector.menu.add_radiobutton(label=f.replace('.dat',''), 
                     variable=filename, value=f, command=self.signalFromFile)
+            
+            if self.signalType == 0:
+                Label(leftPane, text='(Negative -> Full Signal)').pack(side=TOP, pady=(5,0), padx=5, fill=BOTH)
+                lenSel = Frame(leftPane)
+                Button(lenSel, text='Signal Length', command=self.signalFromFile).pack(side=LEFT, fill=BOTH)
+                Entry(lenSel, textvariable=self.len).pack(side=LEFT, fill=BOTH, expand=1)
+                lenSel.pack(side=TOP, pady=(0,5), padx=5, fill=BOTH)
+            
         
         if optionsSpecs:
             [varTitles, varDTypes, varDefaults, varTexts, varVals] = optionsSpecs
@@ -81,10 +91,10 @@ class FourierWindow(Frame):
                 self.radioButtons.append([])
             
                 l = Label(leftPane, text=varTitles[i])
-                l.pack(fill=X, pady=(15,0), padx=5)
+                l.pack(fill=X, pady=(5,0), padx=5)
 
                 frame = Frame(leftPane)
-                frame.pack(fill=BOTH,pady=(0,15),padx=5)
+                frame.pack(fill=BOTH,pady=(0,5),padx=5)
                 
 
                 for j in range(len(varTexts[i])):
@@ -177,7 +187,13 @@ class FourierWindow(Frame):
                 y = loadtxt(lines, dtype=complex128)
             y /= max(abs(y))
             self.funcText = name.replace('.dat', '')
-            self.signal = y
+            l = self.len.get()
+            if l > 0:
+                self.len.set(int(2**ceil(log(l)/log(2))))
+            if self.len.get() < 0:
+                self.signal = y
+            elif self.len.get() < len(y):
+                self.signal = y[:self.len.get()]
         else:
             self.image = matplotlib.image.imread(self.folder + name)
         

@@ -18,16 +18,17 @@ class WaveletWindow(FourierWindow):
     ############################################################################   
     def makeLeftPane(self):
         
-        varTitles = ['Plot Type']
-        varDTypes = [IntVar]
-        varDefaults = [0]
-        varTexts = [['Plot 2D', 'Plot 3D', 'Contour Plot']]
-        varVals = [range(3)]
+        varTitles = ['Plot Type', 'Contour Color']
+        varDTypes = [IntVar, IntVar]
+        varDefaults = [0, 0]
+        varTexts = [['Plot 2D', 'Plot 3D', 'Contour Plot'], ['Color', 'Grayscale']]
+        varVals = [range(3), range(2)]
         
         optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
         
         self._makeLeftPane(optionsSpecs, True) 
         self.plotType = self.options[0]
+        self.contourColor = self.options[1]
         
 	
         l = Label(self.leftPane, text='Wavelets')
@@ -126,6 +127,7 @@ class WaveletWindow(FourierWindow):
             wave = (lambda x,y: other(x,y,self.wavelet.get()))
         
         if (name,wave) not in self.cwt.keys(): self.cwt[(name,wave)] = signal.cwt(data, wave, arange(1,self.maxScale.get()+1))
+        elif self.cwt[(name,wave)].shape[1] < M: self.cwt[(name,wave)] = signal.cwt(data, wave, arange(1,self.maxScale.get()+1))
         elif len(self.cwt[(name,wave)]) < self.maxScale.get(): 
 
             new = signal.cwt(data, wave, arange(len(self.cwt[(name,wave)])+1, self.maxScale.get()+1))
@@ -148,18 +150,26 @@ class WaveletWindow(FourierWindow):
             axes[1].imshow(plotcwt,aspect='auto')
         elif self.plotType.get() == 2:
             axes[1] = figs[1].add_subplot(111)
-
-
-            axes[1].contour(plotcwt)
+            
+            color = self.contourColor.get()
+            #print color
+            color = None if color == 0 else 'k'
+            #print color
+            cs = axes[1].contour(plotcwt, colors=color)
+            axes[1].clabel(cs, inline=1)
+            
         else:
             axes[1] = figs[1].add_subplot(111, projection='3d')
 
 
             shape = plotcwt.shape
+            #print shape, .shape
+            shape = (shape[0], M)
+            plotcwt = plotcwt[:,:M]
             Y = np.array([range(shape[0]) for i in range(shape[1])]).T
             X = np.array([[i]*shape[0] for i in range(shape[1])]).T
 
-            self.plot3D = axes[1].plot_surface(X ,Y,plotcwt,cmap=matplotlib.cm.jet)
+            self.plot3D = axes[1].plot_surface(X ,Y,plotcwt,cmap=matplotlib.cm.jet, linewidth=0)
 
         
         lines[0].set_data(t,data)
@@ -167,7 +177,7 @@ class WaveletWindow(FourierWindow):
         axes[1].axis([0,len(data),0,self.maxScale.get()])
         
         self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
-        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Frequency','Scale','Scalogram of '+self.filename.get())
+        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Time (sec)','Scale','Scalogram of '+self.filename.get())
         
         for axis in axes:
             axis.get_figure().canvas.draw_idle()

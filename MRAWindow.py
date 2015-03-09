@@ -22,25 +22,26 @@ class MRAWindow(FourierWindow):
         
         wavelets = pywt.wavelist()
     
-        varTitles = ['Mode', 'Levels']
-        varDTypes = [StringVar, IntVar]
-        varDefaults = ['Cumulative Reconstruction', -1]
-        varTexts = [['Cumulative Reconstruction', 'Decomposition'], levelTexts]
-        varVals = [['Cumulative Reconstruction', 'Decomposition'], levelVals]
+        varTitles = ['Mode','Frequency or PPM', 'Levels']
+        varDTypes = [StringVar, IntVar, IntVar]
+        varDefaults = ['Cumulative Reconstruction', 0, -1]
+        varTexts = [['Cumulative Reconstruction', 'Decomposition'],['Frequency', 'PPM'], levelTexts]
+        varVals = [['Cumulative Reconstruction', 'Decomposition'], range(2), levelVals]
         # , 'Arbitrary Reconstruction'
         optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
         
         self._makeLeftPane(optionsSpecs, True)
         
         self.mode = self.options[0]
-        self.level = self.options[1]
+        self.freq = self.options[1]
+        self.level = self.options[2]
 
         titlePane = Frame(self.leftPane)
         l = Label(titlePane, text='Wavelets')
         popup = Button(titlePane, text='?', command=self.popupWavelet)
         l.pack(fill=BOTH, side=LEFT, expand=1)
         popup.pack(fill=BOTH, side=LEFT)
-        titlePane.pack(fill=X, pady=(15,0), padx=5)
+        titlePane.pack(fill=X, pady=(5,0), padx=5)
 
         dic = {'Haar':'haar', 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
             'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}
@@ -53,12 +54,12 @@ class MRAWindow(FourierWindow):
         familyMenu = OptionMenu(self.leftPane, self.family, *dic.keys(), command=self.updateFamily)
         familyMenu.pack(fill=BOTH,pady=(0,0),padx=5)
         waveletMenu = OptionMenu(self.leftPane,self.wavelet, *pywt.wavelist(dic[self.family.get()]), command=(lambda x : self.updatePlots()))
-        waveletMenu.pack(fill=BOTH, pady=(0,15),padx=5)
+        waveletMenu.pack(fill=BOTH, pady=(0,5),padx=5)
         
         self.waveletMenu=waveletMenu
         
         table = Frame(self.leftPane)
-        table.pack(fill=BOTH, pady=15, padx=5)
+        table.pack(fill=BOTH, pady=5, padx=5)
         Label(table, text="Energy Table").grid(row=0,column=0,columnspan=3)
         Label(table, text="Level").grid(row=1,column=0)
         Label(table, text="Energy").grid(row=1,column=1)
@@ -72,7 +73,10 @@ class MRAWindow(FourierWindow):
                 l = Label(table, textvariable=tv)
                 l.grid(row=i+2,column=j)
                 row.append([l,tv])
-            self.table.append(row)     
+            self.table.append(row)
+
+        
+        
     def popupWavelet(self):
         popup = Toplevel()
         fig = Figure(figsize=(5,5))
@@ -161,9 +165,9 @@ class MRAWindow(FourierWindow):
         #mode = self.mode.get()
         for i in range(21):
             if i <= max:
-                self.radioButtons[1][i].grid()
+                self.radioButtons[2][i].grid()
             else:
-                self.radioButtons[1][i].grid_remove()
+                self.radioButtons[2][i].grid_remove()
         
     def updateEnergyTable(self): #TODO, clean this up
         max = pywt.dwt_max_level(len(self.signal),pywt.Wavelet(self.wavelet.get()))
@@ -192,7 +196,7 @@ class MRAWindow(FourierWindow):
                     elif j == 1:
                         row[j][1].set('%f'%sum(subsignal**2))
                     else:
-                        percent = (100*sum(subsignal**2)/sum(f**2)).real
+                        percent = (100*sum(subsignal*np.conjugate(subsignal))/sum(f*np.conjugate(f))).real
                         row[j][1].set('%f %%'%percent)
             else:
                 for j in range(3):
@@ -215,7 +219,8 @@ class MRAWindow(FourierWindow):
         [f,w,m] = self.params
         #print m[self.level.get()+1]
         
-        
+        if self.freq.get() == 1:
+            w = 4.7-2*pi/63.8664*w
         
         if self.mode.get() == 'Cumulative Reconstruction':
             levelsText = "Level(s) -1"+''.join(map(lambda i: '+%i'%i, range(self.level.get()+1)))
@@ -236,6 +241,9 @@ class MRAWindow(FourierWindow):
         F2 = fft.fft(f)
         F2 = abs(F2[:N/2])
         
+        print sum(F2*np.conjugate(F2))/len(F2)
+        print sum(F*np.conjugate(F))/len(F)
+        
         lines = self.lines
         axes = self.axes
         
@@ -245,10 +253,12 @@ class MRAWindow(FourierWindow):
         lines[2].set_data(t,s)
         lines[3].set_data(w,F)
         
+        axisLabel = 'Frequency' if self.freq.get() == 0 else 'PPM'
+        
         self.formatAxes(axes[0],t,f,'Time (sec)','Amplitude',self.filename.get())
-        self.formatAxes(axes[1],w,F2,'Frequency','Amplitude','FFT of '+self.filename.get())
+        self.formatAxes(axes[1],w,F2,axisLabel,'Amplitude','FFT of '+self.filename.get())
         self.formatAxes(axes[2],t,s,'Time (sec)','Amplitude',levelsText)
-        self.formatAxes(axes[3],w,F,'Frequency','Amplitude','FFT of '+levelsText)
+        self.formatAxes(axes[3],w,F,axisLabel,'Amplitude','FFT of '+levelsText)
         
         for axis in self.axes:
             axis.get_figure().canvas.draw_idle()
