@@ -49,16 +49,17 @@ class FourierWindow(Frame):
            
     def _makeLeftPane(self, optionsSpecs=[], fileSelector=False):
         leftPane = Frame(self.master, bg='grey')
+        lleftPane = Frame(leftPane, bg='grey')
         
         if fileSelector:
             filename = StringVar()
             self.filename = filename
             filename.set(self.filenames[-1])
             
-            fileSelector = Menubutton(leftPane,text='Signal Select')
+            fileSelector = Menubutton(lleftPane,text='Signal Select')
 
             fileSelector.configure(width=10)
-            fileSelector.pack(side=TOP, pady=5, padx=10) 
+            fileSelector.pack(side=TOP, pady=5, padx=5) 
             
             
             fileSelector.menu = Menu(fileSelector, tearoff=0)
@@ -69,10 +70,10 @@ class FourierWindow(Frame):
                     variable=filename, value=f, command=self.signalFromFile)
             
             if self.signalType == 0:
-                Label(leftPane, text='(Negative -> Full Signal)').pack(side=TOP, pady=(5,0), padx=5, fill=BOTH)
-                lenSel = Frame(leftPane)
+                Label(lleftPane, text='(Negative -> Full Signal)').pack(side=TOP, pady=(5,0), padx=5, fill=BOTH)
+                lenSel = Frame(lleftPane)
                 Button(lenSel, text='Signal Length', command=self.signalFromFile).pack(side=LEFT, fill=BOTH)
-                Entry(lenSel, textvariable=self.len).pack(side=LEFT, fill=BOTH, expand=1)
+                Entry(lenSel, textvariable=self.len).pack(side=LEFT, fill=BOTH)#, expand=1)
                 lenSel.pack(side=TOP, pady=(0,5), padx=5, fill=BOTH)
             
         
@@ -90,10 +91,10 @@ class FourierWindow(Frame):
             for i in range(numOptions):
                 self.radioButtons.append([])
             
-                l = Label(leftPane, text=varTitles[i])
+                l = Label(lleftPane, text=varTitles[i])
                 l.pack(fill=X, pady=(5,0), padx=5)
 
-                frame = Frame(leftPane)
+                frame = Frame(lleftPane)
                 frame.pack(fill=BOTH,pady=(0,5),padx=5)
                 
 
@@ -103,6 +104,11 @@ class FourierWindow(Frame):
                     
                     self.radioButtons[i].append(rb)
                         
+        lleftPane.grid(row=1,column=1)#,sticky=N+S+E+W)
+        #leftPane.columnconfigure(1,weight=1)
+        #leftPane.rowconfigure(1,weight=1)
+        #leftPane.rowconfigure(2,weight=1)      
+        #leftPane.rowconfigure(3,weight=2)  
                 
         self.leftPane = leftPane    
         self.master.add(leftPane)    

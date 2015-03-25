@@ -27,7 +27,10 @@ class STFTWindow(FourierWindow):
 
         #self.plot3D = self.options[0]
         
-        l = Label(self.leftPane, text='Windows')
+        extraOptions = Frame(self.leftPane, bg='grey')
+        extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
+        
+        l = Label(extraOptions, text='Windows')
         l.pack(fill=X, pady=(15,0), padx=5)
 
         dic = {'Modified Bartlett-Hann':'barthann', 'Bartlett':'bartlett', 'Blackman':'blackman', 'Blackman-Harris':'blackmanharris', 
@@ -37,8 +40,8 @@ class STFTWindow(FourierWindow):
         self.window = StringVar()
         self.window.set('Rectangular')
 
-        windowMenu = OptionMenu(self.leftPane, self.window, *dic.keys(), command=(lambda x: self.updatePlots()))
-        windowMenu.config(width=20)
+        windowMenu = OptionMenu(extraOptions, self.window, *dic.keys(), command=(lambda x: self.updatePlots()))
+        #windowMenu.config(width=20)
         windowMenu.pack(fill=BOTH,pady=(0,0),padx=5)
                 
     

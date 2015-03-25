@@ -1,5 +1,5 @@
 from FourierWindow import *
-from wavelets import *
+from wavelets2 import *
 
 
 class WaveletWindow(FourierWindow):
@@ -30,27 +30,29 @@ class WaveletWindow(FourierWindow):
         self.plotType = self.options[0]
         self.contourColor = self.options[1]
         
+        extraOptions = Frame(self.leftPane, bg='grey')
+        extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
 	
-        l = Label(self.leftPane, text='Wavelets')
-        l.pack(fill=X, pady=(30,0), padx=5)
+        l = Label(extraOptions, text='Wavelets')
+        l.pack(side=TOP, fill=X, pady=(5,0), padx=5)
 
-        dic = {'Mexican Hat':'mexh'}#, 'Morlet':'morl', 'Haar':'haar', 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
+        dic = {'Mexican Hat':['MexicanHat'], 'Morlet':['Morlet','MorletReal'], 'Haar':['Haar','HaarW']}#, 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
             #'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}
         self.dic=dic
         self.family = StringVar()
         self.family.set('Mexican Hat')#'Daubechies')
         self.wavelet = StringVar()
-        self.wavelet.set('mexh')#'db4')
+        self.wavelet.set('MexicanHat')#'db4')
 
-        if self.family.get() == 'Mexican Hat' or self.family.get() == 'Morlet':
-            wavelets = [self.dic[self.family.get()]]
-        else:
-            wavelets = pywt.wavelist(self.dic[self.family.get()])
+        #if self.family.get() == 'Mexican Hat' or self.family.get() == 'Morlet':
+        wavelets = [self.dic[self.family.get()]]
+        #else:
+        #    wavelets = pywt.wavelist(self.dic[self.family.get()])
         
-        familyMenu = OptionMenu(self.leftPane, self.family, *dic.keys(), command=self.updateFamily)
-        familyMenu.pack(fill=BOTH,pady=(0,0),padx=5)
-        waveletMenu = OptionMenu(self.leftPane,self.wavelet, *wavelets, command=(lambda x : self.updatePlots()))
-        waveletMenu.pack(fill=BOTH, pady=(0,30),padx=5)
+        familyMenu = OptionMenu(extraOptions, self.family, *dic.keys(), command=self.updateFamily)
+        familyMenu.pack(side=TOP, fill=X,pady=(0,0),padx=5)
+        waveletMenu = OptionMenu(extraOptions,self.wavelet, *wavelets, command=(lambda x : self.updatePlots()))
+        waveletMenu.pack(side=TOP, fill=X, pady=(0,5),padx=5)
         
         self.waveletMenu=waveletMenu
     	
@@ -77,10 +79,10 @@ class WaveletWindow(FourierWindow):
             self.wavelet.set(val)
 
             self.updatePlots()
-        if self.family.get() == 'Mexican Hat' or self.family.get() == 'Morlet':
-            wavelets = [self.dic[self.family.get()]]
-        else:
-            wavelets = pywt.wavelist(self.dic[self.family.get()])
+        #if self.family.get() == 'Mexican Hat' or self.family.get() == 'Morlet':
+        wavelets = self.dic[self.family.get()]
+        #else:
+        #   wavelets = pywt.wavelist(self.dic[self.family.get()])
         
         for wavelet in wavelets:
 
@@ -120,19 +122,22 @@ class WaveletWindow(FourierWindow):
         t = arange(M)
         name = self.filename.get()
 
-        
+        '''
         if self.family.get() == 'Mexican Hat' or self.family.get() == 'Morlet':
             wave = eval(self.wavelet.get())
         else:
             wave = (lambda x,y: other(x,y,self.wavelet.get()))
+        '''
+        wave = eval(self.wavelet.get())
         
-        if (name,wave) not in self.cwt.keys(): self.cwt[(name,wave)] = signal.cwt(data, wave, arange(1,self.maxScale.get()+1))
-        elif self.cwt[(name,wave)].shape[1] < M: self.cwt[(name,wave)] = signal.cwt(data, wave, arange(1,self.maxScale.get()+1))
+        if (name,wave) not in self.cwt.keys(): self.cwt[(name,wave)] = wave(data, 1).getdata()
+        elif self.cwt[(name,wave)].shape[1] < M: self.cwt[(name,wave)] = wave(data, 1).getdata()
+        '''
         elif len(self.cwt[(name,wave)]) < self.maxScale.get(): 
 
             new = signal.cwt(data, wave, arange(len(self.cwt[(name,wave)])+1, self.maxScale.get()+1))
             self.cwt[(name,wave)] = np.append(self.cwt[(name,wave)], new, axis=0)
-
+        '''
         self.signalChanged = False
         
         axes = self.axes       
@@ -178,6 +183,8 @@ class WaveletWindow(FourierWindow):
         
         self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
         self.formatAxes(axes[1],t,range(self.maxScale.get()),'Time (sec)','Scale','Scalogram of '+self.filename.get())
+        
+        self.sliders[0][1].config(to=len(data)/2)
         
         for axis in axes:
             axis.get_figure().canvas.draw_idle()

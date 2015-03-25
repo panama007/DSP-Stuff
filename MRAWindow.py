@@ -36,7 +36,12 @@ class MRAWindow(FourierWindow):
         self.freq = self.options[1]
         self.level = self.options[2]
 
-        titlePane = Frame(self.leftPane)
+        extraOptions = Frame(self.leftPane, bg='grey')
+        extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
+        tables = Frame(self.leftPane, bg='grey')
+        tables.grid(row=1,column=2,sticky=N+S+E+W)
+
+        titlePane = Frame(extraOptions)
         l = Label(titlePane, text='Wavelets')
         popup = Button(titlePane, text='?', command=self.popupWavelet)
         l.pack(fill=BOTH, side=LEFT, expand=1)
@@ -51,14 +56,14 @@ class MRAWindow(FourierWindow):
         self.wavelet = StringVar()
         self.wavelet.set('haar')
 
-        familyMenu = OptionMenu(self.leftPane, self.family, *dic.keys(), command=self.updateFamily)
+        familyMenu = OptionMenu(extraOptions, self.family, *dic.keys(), command=self.updateFamily)
         familyMenu.pack(fill=BOTH,pady=(0,0),padx=5)
-        waveletMenu = OptionMenu(self.leftPane,self.wavelet, *pywt.wavelist(dic[self.family.get()]), command=(lambda x : self.updatePlots()))
+        waveletMenu = OptionMenu(extraOptions,self.wavelet, *pywt.wavelist(dic[self.family.get()]), command=(lambda x : self.updatePlots()))
         waveletMenu.pack(fill=BOTH, pady=(0,5),padx=5)
         
         self.waveletMenu=waveletMenu
         
-        table = Frame(self.leftPane)
+        table = Frame(tables)
         table.pack(fill=BOTH, pady=5, padx=5)
         Label(table, text="Energy Table").grid(row=0,column=0,columnspan=3)
         Label(table, text="Level").grid(row=1,column=0)
@@ -92,7 +97,7 @@ class MRAWindow(FourierWindow):
         f = w.wavefun()
         ax0.plot(f[0])
         ax0.plot(f[1])
-        ax0.legend(['Father Wavelet', 'Mother Wavelet'], fontsize=10)
+        ax0.legend(['Father Wavelet', 'Mother Wavelet'])#, fontsize=10)
         ax0.axis([0,len(f[0]),min(min(f[0]),min(f[1]))-0.1,max(max(f[0]),max(f[1]))+0.1])
         
         n = w.dec_len
@@ -100,7 +105,7 @@ class MRAWindow(FourierWindow):
         F2 = abs(np.fft.fft(w.dec_hi)[:n/2+1])**2/2
         ax1.plot(F)
         ax1.plot(F2)
-        ax1.legend(['Low Pass Filter', 'High Pass Filter'], loc=7, fontsize=10)
+        ax1.legend(['Low Pass Filter', 'High Pass Filter'], loc=7)#, fontsize=10)
         ax1.axis([0,len(F)-1,min(min(F),min(F2))-0.1,max(max(F),max(F2))+0.1])
         
         fig.tight_layout()
