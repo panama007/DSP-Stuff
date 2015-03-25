@@ -88,8 +88,9 @@ class STFTWindow(FourierWindow):
     def updatePlots(self):
         data = self.signal
         N = len(data)
+        
         t = arange(N)
-        delta_w = 2*pi/(N-1)
+        delta_w = 1./(N-1)
         w = linspace(0, delta_w*(N/2-1), num=N/2)
         F = abs(fft.fft(data)[:N/2])
         
@@ -115,10 +116,11 @@ class STFTWindow(FourierWindow):
         lines[3].set_data(w,win_F)
         
         self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
-        self.formatAxes(axes[1],w,F,'Frequency','Magnitude','FFT of '+self.filename.get())
+        self.formatAxes(axes[1],w,F,'Frequency (Hz)','Magnitude','FFT of '+self.filename.get())
         self.formatAxes(axes[2],t,win_data,'Time (sec)','Amplitude','Windowed Signal')
-        self.formatAxes(axes[3],w,win_F,'Frequency','Magnitude','FFT of Windowed Signal')
+        self.formatAxes(axes[3],w,win_F,'Frequency (Hz)','Magnitude','FFT of Windowed Signal')
 
+        self.sliders[1][1].config(to=len(data))
         
         for axis in axes:
             axis.get_figure().canvas.draw_idle()

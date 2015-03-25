@@ -128,6 +128,7 @@ class FourierWindow(Frame):
         #  creates the matplotlib canvasses for the plots 
         for i in range(numPlots):
             canvas = FigureCanvasTkAgg(figs[i], master=plotFrames[i])
+            #NavigationToolbar2TkAgg(canvas, plotFrames[i])
             canvas.show()
             canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
             canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
@@ -225,6 +226,17 @@ class FourierWindow(Frame):
             if i not in oldFreqs:
                 self.frequencySliders[i][0].grid()
                 self.frequencySliders[i][1].grid() 
+    
+    def topNPeaks(self, data, N):
+        peaks = []
+        last = [-1]
+        data = last + list(data) + last
+        for i in range(len(data)-2):
+            if data[i+1] > data[i] and data[i+1] > data[i+2]:
+                peaks.append( (i, data[i+1]) )
+                
+        s = sorted(peaks, key=(lambda x: -x[1]))
+        return s[:N]
                 
     def file_save(self):
         f = tkFileDialog.asksaveasfilename(defaultextension='.dat', initialdir='signals/', filetypes=[('Data File','.dat')])

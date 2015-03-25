@@ -24,9 +24,9 @@ class MRAWindow(FourierWindow):
     
         varTitles = ['Mode','Frequency or PPM', 'Levels']
         varDTypes = [StringVar, IntVar, IntVar]
-        varDefaults = ['Cumulative Reconstruction', 0, -1]
-        varTexts = [['Cumulative Reconstruction', 'Decomposition'],['Frequency', 'PPM'], levelTexts]
-        varVals = [['Cumulative Reconstruction', 'Decomposition'], range(2), levelVals]
+        varDefaults = ['Decomposition', 0, -1]
+        varTexts = [['Decomposition','Cumulative Reconstruction'],['Frequency', 'PPM'], levelTexts]
+        varVals = [['Decomposition','Cumulative Reconstruction'], range(2), levelVals]
         # , 'Arbitrary Reconstruction'
         optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
         
@@ -38,8 +38,10 @@ class MRAWindow(FourierWindow):
 
         extraOptions = Frame(self.leftPane, bg='grey')
         extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
-        tables = Frame(self.leftPane, bg='grey')
-        tables.grid(row=1,column=2,sticky=N+S+E+W)
+        tableFrame1 = Frame(self.leftPane, bg='grey')
+        tableFrame1.grid(row=1,column=2,sticky=N+S+E+W)
+        tableFrame2 = Frame(self.leftPane, bg='grey')
+        tableFrame2.grid(row=2,column=2,sticky=N+S+E+W)
 
         titlePane = Frame(extraOptions)
         l = Label(titlePane, text='Wavelets')
@@ -63,22 +65,42 @@ class MRAWindow(FourierWindow):
         
         self.waveletMenu=waveletMenu
         
-        table = Frame(tables)
+        table = Frame(tableFrame1)
         table.pack(fill=BOTH, pady=5, padx=5)
-        Label(table, text="Energy Table").grid(row=0,column=0,columnspan=3)
+        Label(table, text="Energy Table").grid(row=0,column=0,columnspan=4)
         Label(table, text="Level").grid(row=1,column=0)
-        Label(table, text="Energy").grid(row=1,column=1)
-        Label(table, text="% of Total Energy").grid(row=1,column=2)
+        Label(table, text="Energy in T").grid(row=1,column=1)
+        Label(table, text="Energy in F").grid(row=1,column=2)
+        Label(table, text="% of Total Energy").grid(row=1,column=3)
         
         self.table = []
         for i in range(len(levelVals)+1):
             row = []
-            for j in range(3):
+            for j in range(4):
                 tv = StringVar()
                 l = Label(table, textvariable=tv)
                 l.grid(row=i+2,column=j)
                 row.append([l,tv])
             self.table.append(row)
+            
+        
+        table2 = Frame(tableFrame2)
+        table2.pack(fill=BOTH, pady=5, padx=5)
+        [table2.columnconfigure(i,weight=1) for i in range(3)]
+        Label(table2, text="Frequency Peaks").grid(row=0,column=0,columnspan=3)
+        Label(table2, text="Peak").grid(row=1,column=0)
+        Label(table2, text="Frequency").grid(row=1,column=1)
+        Label(table2, text="Amplitude").grid(row=1,column=2)
+        
+        self.table2 = []
+        for i in range(10):
+            row = []
+            for j in range(3):
+                tv = StringVar()
+                l = Label(table2, textvariable=tv)
+                l.grid(row=i+2,column=j,sticky=N+S+E+W)
+                row.append([l,tv])
+            self.table2.append(row)
 
         
         
@@ -97,7 +119,10 @@ class MRAWindow(FourierWindow):
         f = w.wavefun()
         ax0.plot(f[0])
         ax0.plot(f[1])
-        ax0.legend(['Father Wavelet', 'Mother Wavelet'])#, fontsize=10)
+        if os.name == 'nt':
+            ax0.legend(['Father Wavelet', 'Mother Wavelet'], fontsize=10)
+        else:
+            ax0.legend(['Father Wavelet', 'Mother Wavelet'])
         ax0.axis([0,len(f[0]),min(min(f[0]),min(f[1]))-0.1,max(max(f[0]),max(f[1]))+0.1])
         
         n = w.dec_len
@@ -105,7 +130,10 @@ class MRAWindow(FourierWindow):
         F2 = abs(np.fft.fft(w.dec_hi)[:n/2+1])**2/2
         ax1.plot(F)
         ax1.plot(F2)
-        ax1.legend(['Low Pass Filter', 'High Pass Filter'], loc=7)#, fontsize=10)
+        if os.name == 'nt':
+            ax1.legend(['Low Pass Filter', 'High Pass Filter'], loc=7, fontsize=10)
+        else:
+            ax1.legend(['Low Pass Filter', 'High Pass Filter'], loc=7)
         ax1.axis([0,len(F)-1,min(min(F),min(F2))-0.1,max(max(F),max(F2))+0.1])
         
         fig.tight_layout()
@@ -146,16 +174,17 @@ class MRAWindow(FourierWindow):
             lines.append(l)
 
         self.lines = lines
+        self.markers = 0
 
         self.signalFromFile()
         
     def updateParams(self):    
         f = self.signal
 
-        m = pywt.wavedec(f,self.wavelet.get())
+        m = pywt.wavedec(f,self.wavelet.get(), mode='per')
         
         N = len(f)
-        delta_w = 2*pi/(N-1)
+        delta_w = 1./(N-1)
         w = linspace(0, delta_w*(N/2-1), num=N/2)
         
         self.params = [f,w,m]
@@ -188,10 +217,10 @@ class MRAWindow(FourierWindow):
                     for j in range(max):
                         if j != i:
                             subm[j] = [0]*len(m[j])
-                subsignal = pywt.waverec(subm,self.wavelet.get())
+                subsignal = pywt.waverec(subm,self.wavelet.get(), mode='per')
+                F = np.fft.fft(subsignal)[:len(subsignal)/2]
                 
-                
-                for j in range(3):
+                for j in range(4):
                     row[j][0].grid()
                     if j == 0:
                         if i == max+1:
@@ -200,9 +229,37 @@ class MRAWindow(FourierWindow):
                             row[j][1].set('Levels %i'%(i-1))
                     elif j == 1:
                         row[j][1].set('%f'%sum(subsignal**2))
+                    elif j == 2:
+                        row[j][1].set('%f'%(sum(F*np.conjugate(F))/len(F)))
                     else:
                         percent = (100*sum(subsignal*np.conjugate(subsignal))/sum(f*np.conjugate(f))).real
                         row[j][1].set('%f %%'%percent)
+            else:
+                for j in range(4):
+                    row[j][0].grid_remove()
+                    
+    def updatePeakTable(self, F):
+        peaks = self.topNPeaks(F, 10)
+        [f,w,m] = self.params
+        freqs = [w[p[0]] for p in peaks]
+        amps = [p[1] for p in peaks]
+        
+        if self.markers: self.markers.remove()
+        self.markers = self.axes[3].scatter(freqs,amps,marker='x',c='r')
+        
+        for i in range(10):
+            #print i, len(peaks), peaks
+            row = self.table2[i]
+            
+            if i < len(peaks):
+                for j in range(3):
+                    row[j][0].grid()
+                    if j == 0:
+                        row[j][1].set('#%i'%(i+1))
+                    elif j == 1:
+                        row[j][1].set('%f'%freqs[i])
+                    elif j == 2:
+                        row[j][1].set('%f'%amps[i])
             else:
                 for j in range(3):
                     row[j][0].grid_remove()
@@ -236,7 +293,8 @@ class MRAWindow(FourierWindow):
             for i in range(len(m)):
                 if i != self.level.get()+1:
                     m[i] = [0]*len(m[i])
-        s = pywt.waverec(m,self.wavelet.get())
+        #print m
+        s = pywt.waverec(m,self.wavelet.get(), mode='per')
         
         N = len(s)
         t = arange(N)
@@ -246,8 +304,8 @@ class MRAWindow(FourierWindow):
         F2 = fft.fft(f)
         F2 = abs(F2[:N/2])
         
-        print sum(F2*np.conjugate(F2))/len(F2)
-        print sum(F*np.conjugate(F))/len(F)
+        #print sum(F2*np.conjugate(F2))/len(F2)
+        #print sum(F*np.conjugate(F))/len(F)
         
         lines = self.lines
         axes = self.axes
@@ -257,8 +315,9 @@ class MRAWindow(FourierWindow):
         
         lines[2].set_data(t,s)
         lines[3].set_data(w,F)
+        self.updatePeakTable(F)
         
-        axisLabel = 'Frequency' if self.freq.get() == 0 else 'PPM'
+        axisLabel = 'Frequency (Hz)' if self.freq.get() == 0 else 'PPM'
         
         self.formatAxes(axes[0],t,f,'Time (sec)','Amplitude',self.filename.get())
         self.formatAxes(axes[1],w,F2,axisLabel,'Amplitude','FFT of '+self.filename.get())

@@ -23,10 +23,10 @@ WaveletWindow(tab3)
 STFTWindow(tab4)
 DIPWindow(tab5)
 
-note.add(tab1, text = 'MRA Decomposition')
+note.add(tab4, text = 'Short-Time Fourier Transform')
 note.add(tab2, text = 'Data Generator')
 note.add(tab3, text = 'Wavelet Analysis')
-note.add(tab4, text = 'Short-Time Fourier Transform')
+note.add(tab1, text = 'MRA Decomposition')
 note.add(tab5, text = 'Digital Image Processing')
 note.pack(fill=BOTH, expand=1)
 

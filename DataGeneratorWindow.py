@@ -1,4 +1,5 @@
 from FourierWindow import *
+from scipy.signal import *
 
 class DataGeneratorWindow(FourierWindow):
         
@@ -6,6 +7,7 @@ class DataGeneratorWindow(FourierWindow):
         N = 1024
         Fs = 10.
         Ts = 1/Fs
+        self.maxFreqs=5
         t = linspace(0.,N*Ts,N)
         n = arange(N, dtype=float)
         frequencies = (n / N * Fs)[:N/2]
@@ -75,11 +77,11 @@ class DataGeneratorWindow(FourierWindow):
     #
     ############################################################################    
     def makeRightPane(self):
-        varNames = ['f%i'%i for i in range(10)]
-        varLimits = [(0.1, 10)]*10
-        varRes = [0.1]*10
-        varDTypes = [DoubleVar]*10
-        varDefaults = [1]*10
+        varNames = ['f%i'%i for i in range(self.maxFreqs)]
+        varLimits = [(0.1, 10)]*self.maxFreqs
+        varRes = [0.1]*self.maxFreqs
+        varDTypes = [DoubleVar]*self.maxFreqs
+        varDefaults = [1]*self.maxFreqs
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
         self._makeRightPane((3,1),varValues)
@@ -94,7 +96,7 @@ class DataGeneratorWindow(FourierWindow):
     def initSignals(self):
         [N,Fs,Ts,t,n,frequencies]=self.params
         self.function=self.builtInFunctions[self.funcText.get()]
-        self.freqsUsed = range(10)
+        self.freqsUsed = range(self.maxFreqs)
         
         y = sin(1.*2*pi*t)
         if self.decay.get():
@@ -126,11 +128,11 @@ class DataGeneratorWindow(FourierWindow):
     ############################################################################       
     def updatePlots(self):
         [N,Fs,Ts,t,n,frequencies] = self.params
-        f = [self.frequencies[i].get() for i in range(10)]
+        f = [self.frequencies[i].get() for i in range(self.maxFreqs)]
         oldFreqs = self.freqsUsed
         newFreqs = []
         self.parseSignal() 
-        for i in range(10):
+        for i in range(self.maxFreqs):
             if 'f[%i]'%i in self.function: newFreqs.append(i)
         self.hideShowFreqs(oldFreqs, newFreqs)
         self.freqsUsed = newFreqs

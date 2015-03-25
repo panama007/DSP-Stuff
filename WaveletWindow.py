@@ -36,7 +36,7 @@ class WaveletWindow(FourierWindow):
         l = Label(extraOptions, text='Wavelets')
         l.pack(side=TOP, fill=X, pady=(5,0), padx=5)
 
-        dic = {'Mexican Hat':['MexicanHat'], 'Morlet':['Morlet','MorletReal'], 'Haar':['Haar','HaarW']}#, 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
+        dic = {'Mexican Hat':['MexicanHat'], 'Morlet':['MorletReal','Morlet'], 'Haar':['Haar','HaarW']}#, 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
             #'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}
         self.dic=dic
         self.family = StringVar()
@@ -68,7 +68,7 @@ class WaveletWindow(FourierWindow):
         varDefaults = [128]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane((2,1), varValues)
+        self._makeRightPane((3,1), varValues)
         
         self.maxScale = self.vars[0]
         
@@ -184,7 +184,7 @@ class WaveletWindow(FourierWindow):
         self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
         self.formatAxes(axes[1],t,range(self.maxScale.get()),'Time (sec)','Scale','Scalogram of '+self.filename.get())
         
-        self.sliders[0][1].config(to=len(data)/2)
+        self.sliders[0][1].config(to=len(data)/2-2)
         
         for axis in axes:
             axis.get_figure().canvas.draw_idle()
