@@ -44,11 +44,10 @@ class MRAWindow(FourierWindow):
         tableFrame2.grid(row=2,column=2,sticky=N+S+E+W)
 
         titlePane = Frame(extraOptions)
-        l = Label(titlePane, text='Wavelets')
-        popup = Button(titlePane, text='?', command=self.popupWavelet)
-        l.pack(fill=BOTH, side=LEFT, expand=1)
-        popup.pack(fill=BOTH, side=LEFT)
         titlePane.pack(fill=X, pady=(5,0), padx=5)
+        
+        Label(titlePane, text='Wavelets').pack(fill=BOTH, side=LEFT, expand=1)
+        Button(titlePane, text='?', command=self.popupWavelet).pack(fill=BOTH, side=LEFT)
 
         dic = {'Haar':'haar', 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
             'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}

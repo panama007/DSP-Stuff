@@ -30,8 +30,11 @@ class STFTWindow(FourierWindow):
         extraOptions = Frame(self.leftPane, bg='grey')
         extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
         
-        l = Label(extraOptions, text='Windows')
-        l.pack(fill=X, pady=(15,0), padx=5)
+        titlePane = Frame(extraOptions)
+        titlePane.pack(fill=X, pady=(5,0), padx=5)
+        
+        Label(titlePane, text='Windows').pack(fill=BOTH, side=LEFT, expand=1)
+        #Button(titlePane, text='?', command=self.popupWindow).pack(fill=BOTH, side=LEFT)
 
         dic = {'Modified Bartlett-Hann':'barthann', 'Bartlett':'bartlett', 'Blackman':'blackman', 'Blackman-Harris':'blackmanharris', 
         'Bohman':'bohman', 'Rectangular':'boxcar', 'Dolph-Chebyshev':'chebwin', 'Cosine':'cosine', 'Flat Top':'flattop', 'Hamming':'hamming',
@@ -44,6 +47,28 @@ class STFTWindow(FourierWindow):
         #windowMenu.config(width=20)
         windowMenu.pack(fill=BOTH,pady=(0,0),padx=5)
                 
+    def popupWindow(self):
+        popup = Toplevel()
+        fig = Figure(figsize=(5,5))
+        ax0 = fig.add_subplot(211)
+        ax1 = fig.add_subplot(212)
+
+        canvas = FigureCanvasTkAgg(fig, master=popup)
+        canvas.show()
+        canvas.get_tk_widget().pack(fill=BOTH, expand=1)
+        canvas._tkcanvas.pack(fill=BOTH, expand=1)
+        
+        win = eval('signal.%s(%i)'%(self.dic[self.window.get()],self.width.get()))
+        ax0.plot(win)
+        self.formatAxes(ax0,range(self.width.get()),win,'Sample','Amplitude',self.window.get())
+        
+        F = np.fft.fftshift(abs(np.fft.fft(win,2048)))
+        F = 10*np.log10(F[1024-40:1024+41])
+        freqs = range(-len(F)/2,len(F)/2)
+        ax1.plot(freqs,F)
+        self.formatAxes(ax1,freqs,F,'FFT Bin','Decibels','Fourier Transform')
+        
+        fig.tight_layout()
     
     ############################################################################  
     # Contains the plots and frequency sliders at the bottom
@@ -120,6 +145,7 @@ class STFTWindow(FourierWindow):
         self.formatAxes(axes[2],t,win_data,'Time (sec)','Amplitude','Windowed Signal')
         self.formatAxes(axes[3],w,win_F,'Frequency (Hz)','Magnitude','FFT of Windowed Signal')
 
+        self.sliders[0][1].config(to=len(data)/2)
         self.sliders[1][1].config(to=len(data))
         
         for axis in axes:

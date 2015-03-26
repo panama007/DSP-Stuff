@@ -97,7 +97,7 @@ class WaveletWindow(FourierWindow):
     #
     ############################################################################    
     def initSignals(self):        
-        lines = [0]*2
+        lines = [0]*3
         self.lines = lines
         axes = self.axes
         
@@ -105,11 +105,36 @@ class WaveletWindow(FourierWindow):
         
         lines[0], = axes[0].plot(dummy)
         lines[1] = axes[1].imshow([[0]*1024 for i in range(128)])
+        lines[2], = axes[2].plot(dummy)
+        
+        self.figs[1].canvas.mpl_connect('button_press_event', self.mouseCallback)
         
         #self.formatAxes(axes[0],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
         #self.formatAxes(axes[1],dummy,dummy,'Time (sec)','Scale','Scalogram')
         
         self.signalFromFile()
+
+    def mouseCallback(self, event):
+        if not event.ydata: return
+        
+        s = self.axes[1].format_coord(event.xdata,event.ydata)
+        ind1 = s.find('y')
+        ind2 = ind1 + s[ind1:].find(' ')
+        scale = int(float(s[ind1+2:ind2]))
+        if scale < 0: scale = 0
+        
+        data = self.signal
+        M = len(data)
+        t = arange(M)
+        name = self.filename.get()
+        wave = eval(self.wavelet.get())
+        
+        y = self.cwt[(name,wave)][scale]
+        
+        self.lines[2].set_data(t,y)   
+        self.formatAxes(self.axes[2],t,y,'Time (sec)','Amplitude','Scale %i'%scale)
+        
+        self.axes[2].get_figure().canvas.draw_idle()
 
     ############################################################################  
     # Updates the plots when anything is changed
