@@ -161,9 +161,9 @@ class DataGeneratorWindow(FourierWindow):
         self.formatAxes(self.axes[2],t,frequencies,'Time (sec)','Frequency (Hz)','Spectrogram',spec=True)
         
         for fig in self.figs:
+            fig.canvas.draw_idle()
             fig.tight_layout()
-        for axis in self.axes:
-            axis.get_figure().canvas.draw_idle()
+        #[fig.canvas.draw_idle() for fig in self.figs]
         
         
 if __name__ == "__main__":

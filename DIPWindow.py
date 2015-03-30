@@ -91,8 +91,9 @@ class DIPWindow(FourierWindow):
         axes[3].set_title('Filtered Image')
         
         
-        for axis in axes:
-            axis.get_figure().canvas.draw_idle()
+        for fig in self.figs:
+            fig.canvas.draw_idle()
+            #fig.tight_layout()
  
 if __name__ == "__main__":
     root = Tk()

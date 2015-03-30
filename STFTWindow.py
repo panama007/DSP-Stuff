@@ -148,8 +148,9 @@ class STFTWindow(FourierWindow):
         self.sliders[0][1].config(to=len(data)/2)
         self.sliders[1][1].config(to=len(data))
         
-        for axis in axes:
-            axis.get_figure().canvas.draw_idle()
+        for fig in self.figs:
+            fig.canvas.draw_idle()
+            #fig.tight_layout()
         
 if __name__ == "__main__":
     root = Tk()

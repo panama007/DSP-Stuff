@@ -32,12 +32,14 @@ class WaveletWindow(FourierWindow):
         
         extraOptions = Frame(self.leftPane, bg='grey')
         extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
+        tableFrame = Frame(self.leftPane, bg='grey')
+        tableFrame.grid(row=3,column=1,sticky=N+S+E+W)
 	
         l = Label(extraOptions, text='Wavelets')
         l.pack(side=TOP, fill=X, pady=(5,0), padx=5)
 
         dic = {'Mexican Hat':['MexicanHat'], 'Morlet':['MorletReal','Morlet'], 'Haar':['Haar','HaarW']}#, 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
-            #'Biorthogonal':'bior', 'Reverse Biorthogonal':'rbio', 'Discrete Meyer':'dmey'}
+
         self.dic=dic
         self.family = StringVar()
         self.family.set('Mexican Hat')#'Daubechies')
@@ -55,6 +57,13 @@ class WaveletWindow(FourierWindow):
         waveletMenu.pack(side=TOP, fill=X, pady=(0,5),padx=5)
         
         self.waveletMenu=waveletMenu
+        
+        
+        headings = [("Frequency Peaks", ["Peak", "Frequency", "Amplitude"])]
+        frames = [tableFrame]
+        heights = [10]
+        
+        [self.peaksTable] = self.makeTables(headings, frames, heights)
     	
     ############################################################################  
     # Contains the plots and frequency sliders at the bottom
@@ -68,7 +77,7 @@ class WaveletWindow(FourierWindow):
         varDefaults = [128]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane((3,1), varValues)
+        self._makeRightPane((4,1), varValues)
         
         self.maxScale = self.vars[0]
         
@@ -97,7 +106,7 @@ class WaveletWindow(FourierWindow):
     #
     ############################################################################    
     def initSignals(self):        
-        lines = [0]*3
+        lines = [0]*len(self.axes)
         self.lines = lines
         axes = self.axes
         
@@ -106,11 +115,13 @@ class WaveletWindow(FourierWindow):
         lines[0], = axes[0].plot(dummy)
         lines[1] = axes[1].imshow([[0]*1024 for i in range(128)])
         lines[2], = axes[2].plot(dummy)
+        lines[3], = axes[3].plot(dummy)
         
         self.figs[1].canvas.mpl_connect('button_press_event', self.mouseCallback)
         
         #self.formatAxes(axes[0],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
         #self.formatAxes(axes[1],dummy,dummy,'Time (sec)','Scale','Scalogram')
+        self.markers = 0
         
         self.signalFromFile()
 
@@ -126,15 +137,26 @@ class WaveletWindow(FourierWindow):
         data = self.signal
         M = len(data)
         t = arange(M)
+        delta_w = 1./(M-1)
+        w = np.linspace(0, delta_w*(M/2-1), M/2)
+        
         name = self.filename.get()
         wave = eval(self.wavelet.get())
         
         y = self.cwt[(name,wave)][scale]
+        F = np.abs(np.fft.fft(y))[:M/2]
         
-        self.lines[2].set_data(t,y)   
-        self.formatAxes(self.axes[2],t,y,'Time (sec)','Amplitude','Scale %i'%scale)
+        self.updatePeakTable(w,F)
+        
+        print len(t), len(y)
+        self.lines[2].set_data(t,y)
+        self.lines[3].set_data(w,F)
+        
+        self.formatAxes(self.axes[2],t,y,'Time (sec)','Amplitude','Subsignal at Scale %i'%scale)
+        self.formatAxes(self.axes[3],w,F,'Frequency (Hz)', 'Magnitude', 'FFT of Subsignal')
         
         self.axes[2].get_figure().canvas.draw_idle()
+        self.axes[3].get_figure().canvas.draw_idle()
 
     ############################################################################  
     # Updates the plots when anything is changed
@@ -207,12 +229,22 @@ class WaveletWindow(FourierWindow):
         axes[1].axis([0,len(data),0,self.maxScale.get()])
         
         self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
-        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Time (sec)','Scale','Scalogram of '+self.filename.get())
+        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Time (sec)','Scale','Scalogram of '+self.filename.get(), True)
         
         self.sliders[0][1].config(to=len(data)/2-2)
         
-        for axis in axes:
-            axis.get_figure().canvas.draw_idle()
+        '''
+        if lines[2].get_data()[0][0] == 0.:
+            y = self.cwt[(name,wave)][0]
+            self.lines[2].set_data(t,y)   
+            self.formatAxes(self.axes[2],t,y,'Time (sec)','Amplitude','Subsignal at Scale %i'%0)
+        '''
+        
+        for fig in self.figs:
+            fig.canvas.draw_idle()
+            fig.subplots_adjust(bottom = 0.18)
+            #fig.subplots_adjust(top = 0.9)
+            #fig.tight_layout()
   
 if __name__ == "__main__":
     root = Tk()

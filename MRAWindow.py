@@ -64,6 +64,13 @@ class MRAWindow(FourierWindow):
         
         self.waveletMenu=waveletMenu
         
+        headings = [("Energy Table", ["Level", "Energy in T", "Energy in F", "% Total Energy"]), 
+                    ("Frequency Peaks", ["Peak", "Frequency", "Amplitude"])]
+        frames = [tableFrame1, tableFrame2]
+        heights = [len(levelVals)+1, 10]
+        
+        [self.energyTable, self.peaksTable] = self.makeTables(headings, frames, heights)
+        '''
         table = Frame(tableFrame1)
         table.pack(fill=BOTH, pady=5, padx=5)
         Label(table, text="Energy Table").grid(row=0,column=0,columnspan=4)
@@ -73,7 +80,7 @@ class MRAWindow(FourierWindow):
         Label(table, text="% of Total Energy").grid(row=1,column=3)
         
         self.table = []
-        for i in range(len(levelVals)+1):
+        for i in range():
             row = []
             for j in range(4):
                 tv = StringVar()
@@ -100,8 +107,7 @@ class MRAWindow(FourierWindow):
                 l.grid(row=i+2,column=j,sticky=N+S+E+W)
                 row.append([l,tv])
             self.table2.append(row)
-
-        
+        '''
         
     def popupWavelet(self):
         popup = Toplevel()
@@ -184,7 +190,7 @@ class MRAWindow(FourierWindow):
         
         N = len(f)
         delta_w = 1./(N-1)
-        w = linspace(0, delta_w*(N/2-1), num=N/2)
+        w = np.linspace(0, delta_w*(N/2-1), num=N/2)
         
         self.params = [f,w,m]
 
@@ -208,7 +214,7 @@ class MRAWindow(FourierWindow):
 
         
         for i in range(22):
-            row = self.table[i]
+            row = self.energyTable[i]
             
             if i <= max+1:
                 subm = list(m)
@@ -237,31 +243,6 @@ class MRAWindow(FourierWindow):
                 for j in range(4):
                     row[j][0].grid_remove()
                     
-    def updatePeakTable(self, F):
-        peaks = self.topNPeaks(F, 10)
-        [f,w,m] = self.params
-        freqs = [w[p[0]] for p in peaks]
-        amps = [p[1] for p in peaks]
-        
-        if self.markers: self.markers.remove()
-        self.markers = self.axes[3].scatter(freqs,amps,marker='x',c='r')
-        
-        for i in range(10):
-            #print i, len(peaks), peaks
-            row = self.table2[i]
-            
-            if i < len(peaks):
-                for j in range(3):
-                    row[j][0].grid()
-                    if j == 0:
-                        row[j][1].set('#%i'%(i+1))
-                    elif j == 1:
-                        row[j][1].set('%f'%freqs[i])
-                    elif j == 2:
-                        row[j][1].set('%f'%amps[i])
-            else:
-                for j in range(3):
-                    row[j][0].grid_remove()
                 
     
     ############################################################################  
@@ -314,7 +295,8 @@ class MRAWindow(FourierWindow):
         
         lines[2].set_data(t,s)
         lines[3].set_data(w,F)
-        self.updatePeakTable(F)
+        
+        self.updatePeakTable(w,F)
         
         axisLabel = 'Frequency (Hz)' if self.freq.get() == 0 else 'PPM'
         
@@ -323,8 +305,9 @@ class MRAWindow(FourierWindow):
         self.formatAxes(axes[2],t,s,'Time (sec)','Amplitude',levelsText)
         self.formatAxes(axes[3],w,F,axisLabel,'Amplitude','FFT of '+levelsText)
         
-        for axis in self.axes:
-            axis.get_figure().canvas.draw_idle()
+        for fig in self.figs:
+            fig.canvas.draw_idle()
+            #fig.tight_layout()
         
 if __name__ == "__main__":
     root = Tk()

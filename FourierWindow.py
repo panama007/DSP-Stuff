@@ -124,6 +124,7 @@ class FourierWindow(Frame):
         axes = [fig.add_subplot(111) for fig in figs]
         self.figs = figs
         self.axes = axes
+        [ax.grid() for ax in axes]
         
         #  creates the matplotlib canvasses for the plots 
         for i in range(numPlots):
@@ -170,13 +171,57 @@ class FourierWindow(Frame):
                
         self.rightPane = rightPane
         self.master.add(rightPane)
+    
+    def makeTables(self, headings, frames, heights):
+        tables = [[] for i in headings]
+        for i in range(len(headings)):
+            tableFrame = Frame(frames[i])
+            tableFrame.pack(fill=BOTH, pady=5, padx=5)
+            
+            Label(tableFrame, text=headings[i][0]).grid(row=0,column=0,columnspan=len(headings[i][1]))
+            for j in range(len(headings[i][1])):
+                Label(tableFrame, text=headings[i][1][j]).grid(row=1,column=j)
+                tableFrame.columnconfigure(j, weight=1)
+                
+            for j in range(heights[i]):
+                row = []
+                for k in range(len(headings[i][1])):
+                    tv = StringVar()
+                    l = Label(tableFrame, textvariable=tv)
+                    l.grid(row=j+2,column=k,sticky=N+S+E+W)
+                    row.append([l,tv])
+                tables[i].append(row)
          
+        return tables
+    
+    def updatePeakTable(self, w, F):
+        peaks = self.topNPeaks(F, 10)
+        freqs = [w[p[0]] for p in peaks]
+        amps = [p[1] for p in peaks]
+        
+        if self.markers: self.markers.remove()
+        self.markers = self.axes[3].scatter(freqs,amps,marker='x',c='r')
+        
+        for i in range(10):
+            #print i, len(peaks), peaks
+            row = self.peaksTable[i]
+            
+            if i < len(peaks):
+                vals = ['#%i'%(i+1),'%f'%freqs[i],'%f'%amps[i]]
+                for j in range(3):
+                    row[j][0].grid()
+                    row[j][1].set(vals[j])
+            else:
+                for j in range(3):
+                    row[j][0].grid_remove()
+    
     def initSignals(self): pass
     def updatePlots(self): pass
 
     def formatAxes(self, ax, x, y, xlabel, ylabel, title, spec=False):
+        m = max(np.abs(y))
         if not spec:
-            ax.axis([min(x), max(x), min(y), max(y)])
+            ax.axis([min(x), max(x), min(y)-0.1*m, max(y)+0.1*m])
         
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
