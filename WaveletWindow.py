@@ -165,7 +165,7 @@ class WaveletWindow(FourierWindow):
                 ys = [self.slope[0][1], self.slope[1][1]]
                 m = (np.abs(cwt[ys[1]][xs[1]]) - np.abs(cwt[ys[0]][xs[0]])) / np.sqrt((ys[0]-ys[1])**2+(xs[0]-xs[1])**2)
                 
-                self.slope[3] = self.axes[1].plot(xs, ys, label='Slope = %f'%m, color='k', linewidth=2)
+                self.slope[3] = self.axes[1].plot(xs, ys, label='Avg. Slope = %f'%m, color='k', linewidth=2)
                 self.axes[1].legend()
                 self.axes[1].get_figure().canvas.draw_idle()
                 
@@ -222,7 +222,7 @@ class WaveletWindow(FourierWindow):
         axes[1].axis([0,len(data),0,self.maxScale.get()])
         
         self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
-        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Time (sec)','Scale','Scalogram of '+self.filename.get(), True)
+        self.formatAxes(axes[1],t,range(self.maxScale.get()),'Time (sec)','Scale','Scalogram of '+self.filename.get() +'   (LClick to select subsignal, RClick twice for slope)', True)
         
         self.sliders[0][1].config(to=len(data)/2-2)
         
