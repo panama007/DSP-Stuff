@@ -22,13 +22,7 @@ class FourierWindow(Frame):
     def __init__(self, root):
     
         Frame.__init__(self, root)
-        
-        self.builtInFunctions = {'Sinusoid' : 'sin(f[0]*2*pi*t)',
-                            'Two Sinusoids' : 'sin(f[0]*2*pi*t) + sin(f[1]*2*pi*t)',
-                            'Two Seq. Sinusoids' : 'where(t<t[N/2], sin(f[0]*2*pi*t), sin(f[1]*2*pi*t))',
-                            'Delta' : 'where(t==t[N/2], 1, 0)',
-                            'Chirp' : 'sin((f[0]+(f[1]-f[0])/2*t/t[-1])*2*pi*t)'}
-        
+                
         master = PanedWindow(root, orient=HORIZONTAL)
         self.master = master
         master.pack(fill=BOTH, expand=1)
@@ -40,6 +34,7 @@ class FourierWindow(Frame):
         self.filenames = np.sort(os.listdir(self.folder))
         self.len = IntVar()
         self.len.set(-1)
+        self.pads = [5,15]
         
         self.makeLeftPane()
         self.makeRightPane()
@@ -59,7 +54,7 @@ class FourierWindow(Frame):
             fileSelector = Menubutton(lleftPane,text='Signal Select')
 
             fileSelector.configure(width=10)
-            fileSelector.pack(side=TOP, pady=5, padx=5) 
+            fileSelector.pack(side=TOP, pady=self.pads[1], padx=self.pads[0]) 
             
             
             fileSelector.menu = Menu(fileSelector, tearoff=0)
@@ -70,11 +65,11 @@ class FourierWindow(Frame):
                     variable=filename, value=f, command=self.signalFromFile)
             
             if self.signalType == 0:
-                Label(lleftPane, text='(Negative -> Full Signal)').pack(side=TOP, pady=(5,0), padx=5, fill=BOTH)
+                Label(lleftPane, text='(Negative -> Full Signal)').pack(side=TOP, pady=(self.pads[1],0), padx=self.pads[0], fill=BOTH)
                 lenSel = Frame(lleftPane)
                 Button(lenSel, text='Signal Length', command=self.signalFromFile).pack(side=LEFT, fill=BOTH)
                 Entry(lenSel, textvariable=self.len).pack(side=LEFT, fill=BOTH)#, expand=1)
-                lenSel.pack(side=TOP, pady=(0,5), padx=5, fill=BOTH)
+                lenSel.pack(side=TOP, pady=(0,self.pads[1]), padx=self.pads[0], fill=BOTH)
             
         
         if optionsSpecs:
@@ -92,15 +87,15 @@ class FourierWindow(Frame):
                 self.radioButtons.append([])
             
                 l = Label(lleftPane, text=varTitles[i])
-                l.pack(fill=X, pady=(5,0), padx=5)
+                l.pack(fill=X, pady=(self.pads[1],0), padx=self.pads[0])
 
                 frame = Frame(lleftPane)
-                frame.pack(fill=BOTH,pady=(0,5),padx=5)
+                frame.pack(fill=BOTH,pady=(0,self.pads[1]),padx=self.pads[0])
                 
 
                 for j in range(len(varTexts[i])):
                     rb = Radiobutton(frame, text=varTexts[i][j], variable=self.options[i], value=varVals[i][j], command=self.updatePlots)
-                    rb.grid(row=j+1,sticky=W,padx=(5,0))
+                    rb.grid(row=j+1,sticky=W,padx=(self.pads[0],0))
                     
                     self.radioButtons[i].append(rb)
                         
@@ -194,17 +189,18 @@ class FourierWindow(Frame):
          
         return tables
     
-    def updatePeakTable(self, w, F):
-        peaks = self.topNPeaks(F, 10)
+    def updatePeakTable(self, w, F, markersNum, table, axNum):
+        numRows = len(table)
+        peaks = self.topNPeaks(F, numRows)
         freqs = [w[p[0]] for p in peaks]
         amps = [p[1] for p in peaks]
+
+        if self.markers[markersNum]: self.markers[markersNum].remove()
+        self.markers[markersNum] = self.axes[axNum].scatter(freqs,amps,marker='x',c='r')
         
-        if self.markers: self.markers.remove()
-        self.markers = self.axes[3].scatter(freqs,amps,marker='x',c='r')
-        
-        for i in range(10):
+        for i in range(numRows):
             #print i, len(peaks), peaks
-            row = self.peaksTable[i]
+            row = table[i]
             
             if i < len(peaks):
                 vals = ['#%i'%(i+1),'%f'%freqs[i],'%f'%amps[i]]
@@ -214,6 +210,17 @@ class FourierWindow(Frame):
             else:
                 for j in range(3):
                     row[j][0].grid_remove()
+                    
+    def _initSignals(self, numMarkers=0):
+        self.lines = [0]*len(self.axes)
+        axes = self.axes
+        
+        dummy = [0]
+        for i in range(len(axes)):
+            self.lines[i], = axes[i].plot(dummy)
+            
+        self.markers = [[]]*numMarkers
+        
     
     def initSignals(self): pass
     def updatePlots(self): pass
@@ -226,10 +233,6 @@ class FourierWindow(Frame):
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
-        #ax.spines['bottom'].set_position('zero')
-        #ax.spines['bottom'].label='zero'
-        #ax.xaxis.set_label_coords(0.5,-0.01)
-        #ax.yaxis.set_label_coords(-0.05,0.5)
         
     def signalFromFile(self):
         name = self.filename.get()
@@ -262,15 +265,15 @@ class FourierWindow(Frame):
             y = func
         self.function = y
         
-    def hideShowFreqs(self, oldFreqs, newFreqs):
+    def hideShowFreqs(self, oldFreqs, newFreqs, sliders):
         for i in oldFreqs:
             if i not in newFreqs:
-                self.frequencySliders[i][0].grid_remove()
-                self.frequencySliders[i][1].grid_remove()
+                sliders[i][0].grid_remove()
+                sliders[i][1].grid_remove()
         for i in newFreqs:
             if i not in oldFreqs:
-                self.frequencySliders[i][0].grid()
-                self.frequencySliders[i][1].grid() 
+                sliders[i][0].grid()
+                sliders[i][1].grid() 
     
     def topNPeaks(self, data, N):
         peaks = []

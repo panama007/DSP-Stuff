@@ -18,10 +18,9 @@ def create_filter(N, r1, r2, filter_type):
 class DIPWindow(FourierWindow):
         
     def __init__(self, root):
+        self.title = 'Digital Image Processing'
+    
         self.signalType = 1
-        
-        #self.cwt = {}
-        #self.plot3D = 0
     
         FourierWindow.__init__(self, root)
         
@@ -54,14 +53,7 @@ class DIPWindow(FourierWindow):
         self.r2 = self.vars[1]
         
     def initSignals(self):        
-        axes = self.axes
-        lines = []
-        dummy = [0]
-        for axis in axes:
-            l,=axis.plot(dummy)
-            lines.append(l)
-
-        self.lines = lines
+        self._initSignals()
 
         self.signalFromFile()
         
@@ -98,4 +90,8 @@ class DIPWindow(FourierWindow):
 if __name__ == "__main__":
     root = Tk()
     DIPWindow(root)
+    
+    if os.name == "nt": root.wm_state('zoomed')
+    else: root.attributes('-zoomed', True)
+
     root.mainloop() 

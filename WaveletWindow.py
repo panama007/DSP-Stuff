@@ -5,6 +5,8 @@ from wavelets2 import *
 class WaveletWindow(FourierWindow):
         
     def __init__(self, root):
+        self.title = 'Wavelet Analysis'
+    
         self.signalType = 0
         
         self.cwt = {}
@@ -31,12 +33,10 @@ class WaveletWindow(FourierWindow):
         self.contourColor = self.options[1]
         
         extraOptions = Frame(self.leftPane, bg='grey')
-        extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
-        tableFrame = Frame(self.leftPane, bg='grey')
-        tableFrame.grid(row=3,column=1,sticky=N+S+E+W)
+        extraOptions.grid(row=2, column=1, sticky=N+S+E+W, pady=self.pads[1], padx=self.pads[0])
 	
         l = Label(extraOptions, text='Wavelets')
-        l.pack(side=TOP, fill=X, pady=(5,0), padx=5)
+        l.pack(side=TOP, fill=X, pady=(self.pads[1],0), padx=self.pads[0])
 
         dic = {'Mexican Hat':['MexicanHat'], 'Morlet':['MorletReal','Morlet'], 'Haar':['Haar','HaarW']}#, 'Daubechies':'db', 'Symlets':'sym', 'Coiflets':'coif', 
 
@@ -46,22 +46,22 @@ class WaveletWindow(FourierWindow):
         self.wavelet = StringVar()
         self.wavelet.set('MexicanHat')#'db4')
 
-        #if self.family.get() == 'Mexican Hat' or self.family.get() == 'Morlet':
         wavelets = [self.dic[self.family.get()]]
-        #else:
-        #    wavelets = pywt.wavelist(self.dic[self.family.get()])
         
         familyMenu = OptionMenu(extraOptions, self.family, *dic.keys(), command=self.updateFamily)
-        familyMenu.pack(side=TOP, fill=X,pady=(0,0),padx=5)
+        familyMenu.pack(side=TOP, fill=X,pady=0,padx=self.pads[0])
         waveletMenu = OptionMenu(extraOptions,self.wavelet, *wavelets, command=(lambda x : self.updatePlots()))
-        waveletMenu.pack(side=TOP, fill=X, pady=(0,5),padx=5)
+        waveletMenu.pack(side=TOP, fill=X, pady=(0,self.pads[1]),padx=self.pads[0])
         
         self.waveletMenu=waveletMenu
         
         
+        tableFrame = Frame(self.leftPane, bg='grey')
+        tableFrame.grid(row=3,column=1,sticky=N+S+E+W)
+        
         headings = [("Frequency Peaks", ["Peak", "Frequency", "Amplitude"])]
         frames = [tableFrame]
-        heights = [10]
+        heights = [20]
         
         [self.peaksTable] = self.makeTables(headings, frames, heights)
     	
@@ -72,7 +72,7 @@ class WaveletWindow(FourierWindow):
     def makeRightPane(self):
         varNames = ['Max Scale']
         varLimits = [(1,512)]
-        varRes = [1]
+        varRes = [2]
         varDTypes = [IntVar]
         varDefaults = [128]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
@@ -88,11 +88,9 @@ class WaveletWindow(FourierWindow):
             self.wavelet.set(val)
 
             self.updatePlots()
-        #if self.family.get() == 'Mexican Hat' or self.family.get() == 'Morlet':
+
         wavelets = self.dic[self.family.get()]
-        #else:
-        #   wavelets = pywt.wavelist(self.dic[self.family.get()])
-        
+
         for wavelet in wavelets:
 
             self.waveletMenu['menu'].add_command(label=wavelet,command=lambda wavelet=wavelet:c(wavelet))
@@ -105,58 +103,73 @@ class WaveletWindow(FourierWindow):
     # Initializes the signals in the plots
     #
     ############################################################################    
-    def initSignals(self):        
-        lines = [0]*len(self.axes)
-        self.lines = lines
-        axes = self.axes
-        
-        dummy = [0]
-        
-        lines[0], = axes[0].plot(dummy)
-        lines[1] = axes[1].imshow([[0]*1024 for i in range(128)])
-        lines[2], = axes[2].plot(dummy)
-        lines[3], = axes[3].plot(dummy)
+    def initSignals(self):
+        self._initSignals(numMarkers=1)
         
         self.figs[1].canvas.mpl_connect('button_press_event', self.mouseCallback)
-        
-        #self.formatAxes(axes[0],dummy,dummy,'Time (sec)','Amplitude','Original Signal')
-        #self.formatAxes(axes[1],dummy,dummy,'Time (sec)','Scale','Scalogram')
-        self.markers = 0
+        self.slope = [None]*4
         
         self.signalFromFile()
 
-    def mouseCallback(self, event):
+    def mouseCallback(self, event):    
         if not event.ydata: return
         
         s = self.axes[1].format_coord(event.xdata,event.ydata)
-        ind1 = s.find('y')
-        ind2 = ind1 + s[ind1:].find(' ')
-        scale = int(float(s[ind1+2:ind2]))
-        if scale < 0: scale = 0
+        
+        yind1 = s.find('y')
+        xind1 = s.find('x')
+        yind2 = yind1 + s[yind1:].find(' ')
+        xind2 = xind1 + s[xind1:].find(' ')
+        y = int(float(s[yind1+2:yind2]))
+        x = int(float(s[xind1+2:xind2]))
         
         data = self.signal
-        M = len(data)
-        t = arange(M)
-        delta_w = 1./(M-1)
-        w = np.linspace(0, delta_w*(M/2-1), M/2)
-        
+        N = len(data)
         name = self.filename.get()
         wave = eval(self.wavelet.get())
+        cwt = self.cwt[(name,wave,N)]
         
-        y = self.cwt[(name,wave)][scale]
-        F = np.abs(np.fft.fft(y))[:M/2]
-        
-        self.updatePeakTable(w,F)
-        
-        print len(t), len(y)
-        self.lines[2].set_data(t,y)
-        self.lines[3].set_data(w,F)
-        
-        self.formatAxes(self.axes[2],t,y,'Time (sec)','Amplitude','Subsignal at Scale %i'%scale)
-        self.formatAxes(self.axes[3],w,F,'Frequency (Hz)', 'Magnitude', 'FFT of Subsignal')
-        
-        self.axes[2].get_figure().canvas.draw_idle()
-        self.axes[3].get_figure().canvas.draw_idle()
+        if event.button == 1:
+            scale = y
+            if scale < 0: scale = 0
+
+            t = arange(N)
+            delta_w = 1./(N-1)
+            w = np.linspace(0, delta_w*(N/2-1), N/2)
+            
+            subsignal = cwt[scale]
+            F = np.abs(np.fft.fft(subsignal))[:N/2]
+            
+            self.updatePeakTable(w,F,0,self.peaksTable,3)
+            
+            self.lines[2].set_data(t,subsignal)
+            self.lines[3].set_data(w,F)
+            
+            self.formatAxes(self.axes[2],t,subsignal,'Time (sec)','Amplitude','Subsignal at Scale %i'%scale)
+            self.formatAxes(self.axes[3],w,F,'Frequency (Hz)', 'Magnitude', 'FFT of Subsignal')
+            
+            self.axes[2].get_figure().canvas.draw_idle()
+            self.axes[3].get_figure().canvas.draw_idle()
+            
+        elif event.button == 3:
+            if (bool(self.slope[0]) == bool(self.slope[1])) or (name, wave, N) != self.slope[2]: 
+                self.slope[0] = (x,y)
+                self.slope[1] = None
+                self.slope[2] = (name, wave, N)
+                if self.slope[3]: self.slope[3].pop(0).remove()
+                
+            elif self.slope[0] and not self.slope[1]:
+                self.slope[1] = (x,y)
+                
+                xs = [self.slope[0][0], self.slope[1][0]]
+                ys = [self.slope[0][1], self.slope[1][1]]
+                m = (np.abs(cwt[ys[1]][xs[1]]) - np.abs(cwt[ys[0]][xs[0]])) / np.sqrt((ys[0]-ys[1])**2+(xs[0]-xs[1])**2)
+                
+                self.slope[3] = self.axes[1].plot(xs, ys, label='Slope = %f'%m, color='k', linewidth=2)
+                self.axes[1].legend()
+                self.axes[1].get_figure().canvas.draw_idle()
+                
+            
 
     ############################################################################  
     # Updates the plots when anything is changed
@@ -165,59 +178,39 @@ class WaveletWindow(FourierWindow):
     
     def updatePlots(self):
         data = self.signal
-        M = len(data)
-        t = arange(M)
+        N = len(data)
+        t = arange(N)
         name = self.filename.get()
 
-        '''
-        if self.family.get() == 'Mexican Hat' or self.family.get() == 'Morlet':
-            wave = eval(self.wavelet.get())
-        else:
-            wave = (lambda x,y: other(x,y,self.wavelet.get()))
-        '''
         wave = eval(self.wavelet.get())
         
-        if (name,wave) not in self.cwt.keys(): self.cwt[(name,wave)] = wave(data, 1).getdata()
-        elif self.cwt[(name,wave)].shape[1] < M: self.cwt[(name,wave)] = wave(data, 1).getdata()
-        '''
-        elif len(self.cwt[(name,wave)]) < self.maxScale.get(): 
+        if (name,wave,N) not in self.cwt.keys(): self.cwt[(name,wave,N)] = wave(data, 1).getdata()
 
-            new = signal.cwt(data, wave, arange(len(self.cwt[(name,wave)])+1, self.maxScale.get()+1))
-            self.cwt[(name,wave)] = np.append(self.cwt[(name,wave)], new, axis=0)
-        '''
         self.signalChanged = False
         
         axes = self.axes       
         figs = self.figs
         lines = self.lines
                 
-
-        plotcwt = abs(self.cwt[(name,wave)][:self.maxScale.get()])#**2
+        plotcwt = abs(self.cwt[(name,wave,N)][:self.maxScale.get()])
 
         figs[1].clf()
         if self.plotType.get() == 0:
             axes[1] = figs[1].add_subplot(111)
-
             
             axes[1].imshow(plotcwt,aspect='auto')
         elif self.plotType.get() == 2:
             axes[1] = figs[1].add_subplot(111)
             
             color = self.contourColor.get()
-            #print color
             color = None if color == 0 else 'k'
-            #print color
             cs = axes[1].contour(plotcwt, colors=color)
             axes[1].clabel(cs, inline=1)
             
         else:
             axes[1] = figs[1].add_subplot(111, projection='3d')
 
-
             shape = plotcwt.shape
-            #print shape, .shape
-            shape = (shape[0], M)
-            plotcwt = plotcwt[:,:M]
             Y = np.array([range(shape[0]) for i in range(shape[1])]).T
             X = np.array([[i]*shape[0] for i in range(shape[1])]).T
 
@@ -233,20 +226,15 @@ class WaveletWindow(FourierWindow):
         
         self.sliders[0][1].config(to=len(data)/2-2)
         
-        '''
-        if lines[2].get_data()[0][0] == 0.:
-            y = self.cwt[(name,wave)][0]
-            self.lines[2].set_data(t,y)   
-            self.formatAxes(self.axes[2],t,y,'Time (sec)','Amplitude','Subsignal at Scale %i'%0)
-        '''
-        
         for fig in self.figs:
             fig.canvas.draw_idle()
             fig.subplots_adjust(bottom = 0.18)
-            #fig.subplots_adjust(top = 0.9)
-            #fig.tight_layout()
   
 if __name__ == "__main__":
     root = Tk()
     WaveletWindow(root)
+    
+    if os.name == "nt": root.wm_state('zoomed')
+    else: root.attributes('-zoomed', True)
+
     root.mainloop()    

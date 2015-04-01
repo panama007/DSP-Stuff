@@ -4,6 +4,8 @@ from scipy import signal
 class STFTWindow(FourierWindow):
         
     def __init__(self, root):
+        self.title = 'Short-Time Fourier Transform'
+        
         self.signalType = 0
     
         FourierWindow.__init__(self, root)
@@ -29,9 +31,13 @@ class STFTWindow(FourierWindow):
         
         extraOptions = Frame(self.leftPane, bg='grey')
         extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
+        tableFrame1 = Frame(self.leftPane, bg='grey')
+        tableFrame1.grid(row=3,column=1,sticky=N+S+E+W, pady=self.pads[1], padx=self.pads[0])
+        tableFrame2 = Frame(self.leftPane, bg='grey')
+        tableFrame2.grid(row=4,column=1,sticky=N+S+E+W, pady=self.pads[1], padx=self.pads[0])
         
         titlePane = Frame(extraOptions)
-        titlePane.pack(fill=X, pady=(5,0), padx=5)
+        titlePane.pack(fill=X, pady=(self.pads[1],0), padx=self.pads[0])
         
         Label(titlePane, text='Windows').pack(fill=BOTH, side=LEFT, expand=1)
         #Button(titlePane, text='?', command=self.popupWindow).pack(fill=BOTH, side=LEFT)
@@ -45,7 +51,14 @@ class STFTWindow(FourierWindow):
 
         windowMenu = OptionMenu(extraOptions, self.window, *dic.keys(), command=(lambda x: self.updatePlots()))
         #windowMenu.config(width=20)
-        windowMenu.pack(fill=BOTH,pady=(0,0),padx=5)
+        windowMenu.pack(fill=BOTH,pady=(0,self.pads[1]),padx=self.pads[0])
+        
+        headings = [("Frequency Peaks in Original Signal", ["Peak", "Frequency", "Amplitude"]),
+                    ("Frequency Peaks in Windowed Signal", ["Peak", "Frequency", "Amplitude"])]
+        frames = [tableFrame1, tableFrame2]
+        heights = [10,10]
+        
+        [self.peaksOrigTable, self.peaksWindTable] = self.makeTables(headings, frames, heights)
                 
     def popupWindow(self):
         popup = Toplevel()
@@ -92,16 +105,11 @@ class STFTWindow(FourierWindow):
     # Initializes the signals in the plots
     #
     ############################################################################    
-    def initSignals(self):        
-        axes = self.axes
-        lines = []
-        dummy = [0]
-        for axis in axes:
-            l,=axis.plot(dummy)
-            lines.append(l)
-        l,=axes[0].plot(dummy, color='red')
-        lines.append(l)
-        self.lines = lines
+    def initSignals(self):
+        self._initSignals(numMarkers=2)
+        
+        l,=self.axes[0].plot([0], color='red')
+        self.lines.append(l)
 
         self.signalFromFile()
 
@@ -114,10 +122,10 @@ class STFTWindow(FourierWindow):
         data = self.signal
         N = len(data)
         
-        t = arange(N)
+        t = np.arange(N)
         delta_w = 1./(N-1)
-        w = linspace(0, delta_w*(N/2-1), num=N/2)
-        F = abs(fft.fft(data)[:N/2])
+        w = np.linspace(0, delta_w*(N/2-1), N/2)
+        F = np.abs(np.fft.fft(data)[:N/2])
         
         width = self.width.get()
         center = self.center.get()
@@ -130,6 +138,9 @@ class STFTWindow(FourierWindow):
         win_data = win*data
         
         win_F = abs(fft.fft(win_data)[:N/2])
+        
+        self.updatePeakTable(w,F, 0, self.peaksOrigTable, 1)
+        self.updatePeakTable(w,win_F, 1, self.peaksWindTable, 3)
         
         lines = self.lines
         axes = self.axes
@@ -155,6 +166,10 @@ class STFTWindow(FourierWindow):
 if __name__ == "__main__":
     root = Tk()
     STFTWindow(root)
+    
+    if os.name == "nt": root.wm_state('zoomed')
+    else: root.attributes('-zoomed', True)
+
     root.mainloop()        
 
     

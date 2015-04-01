@@ -4,6 +4,8 @@ from FourierWindow import *
 class MRAWindow(FourierWindow):
         
     def __init__(self, root):
+        self.title = 'MRA Decomposition'
+    
         self.numLevels=10
         self.signalChanged=True
         
@@ -39,12 +41,12 @@ class MRAWindow(FourierWindow):
         extraOptions = Frame(self.leftPane, bg='grey')
         extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
         tableFrame1 = Frame(self.leftPane, bg='grey')
-        tableFrame1.grid(row=1,column=2,sticky=N+S+E+W)
+        tableFrame1.grid(row=1,column=2,sticky=N+S+E+W, pady=self.pads[1], padx=self.pads[0])
         tableFrame2 = Frame(self.leftPane, bg='grey')
-        tableFrame2.grid(row=2,column=2,sticky=N+S+E+W)
+        tableFrame2.grid(row=2,column=2,sticky=N+S+E+W, pady=self.pads[1], padx=self.pads[0])
 
         titlePane = Frame(extraOptions)
-        titlePane.pack(fill=X, pady=(5,0), padx=5)
+        titlePane.pack(fill=X, pady=(self.pads[1],0), padx=self.pads[0])
         
         Label(titlePane, text='Wavelets').pack(fill=BOTH, side=LEFT, expand=1)
         Button(titlePane, text='?', command=self.popupWavelet).pack(fill=BOTH, side=LEFT)
@@ -58,9 +60,9 @@ class MRAWindow(FourierWindow):
         self.wavelet.set('haar')
 
         familyMenu = OptionMenu(extraOptions, self.family, *dic.keys(), command=self.updateFamily)
-        familyMenu.pack(fill=BOTH,pady=(0,0),padx=5)
+        familyMenu.pack(fill=BOTH,pady=0,padx=self.pads[0])
         waveletMenu = OptionMenu(extraOptions,self.wavelet, *pywt.wavelist(dic[self.family.get()]), command=(lambda x : self.updatePlots()))
-        waveletMenu.pack(fill=BOTH, pady=(0,5),padx=5)
+        waveletMenu.pack(fill=BOTH, pady=(0,self.pads[1]),padx=self.pads[0])
         
         self.waveletMenu=waveletMenu
         
@@ -163,7 +165,6 @@ class MRAWindow(FourierWindow):
     #
     ############################################################################    
     def makeRightPane(self):
-    
         self._makeRightPane((2,2))
         
     ############################################################################  
@@ -171,15 +172,7 @@ class MRAWindow(FourierWindow):
     #
     ############################################################################    
     def initSignals(self):
-        axes = self.axes
-        lines = []
-        dummy = [0]
-        for axis in axes:
-            l,=axis.plot(dummy)
-            lines.append(l)
-
-        self.lines = lines
-        self.markers = 0
+        self._initSignals(numMarkers=1)
 
         self.signalFromFile()
         
@@ -296,7 +289,7 @@ class MRAWindow(FourierWindow):
         lines[2].set_data(t,s)
         lines[3].set_data(w,F)
         
-        self.updatePeakTable(w,F)
+        self.updatePeakTable(w,F,0,self.peaksTable,3)
         
         axisLabel = 'Frequency (Hz)' if self.freq.get() == 0 else 'PPM'
         
@@ -312,5 +305,9 @@ class MRAWindow(FourierWindow):
 if __name__ == "__main__":
     root = Tk()
     MRAWindow(root)
+    
+    if os.name == "nt": root.wm_state('zoomed')
+    else: root.attributes('-zoomed', True)
+
     root.mainloop()  
     
