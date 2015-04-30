@@ -110,62 +110,59 @@ class FourierWindow(Frame):
         
     def _makeRightPane(self, plots, varValues=[]):
         rightPane = Frame(self.master)
-        y,x = plots[0],plots[1]
-        numPlots = x*y
+
+        numPlots = plots[0]*plots[1]
         plotFrame = Frame(rightPane)
         plotFrame.pack(fill=BOTH, expand=1)
         plotFrames = [Frame(plotFrame) for i in range(numPlots)] 
-        #figs = [Figure(figsize=(1,1)) for i in range(numPlots)]
-        fig = Figure(figsize=(1,1))
-        #print y, x, (y-1)*y+(x-1)+1, (x-1)*y+(y-1)+1
-        axes = [fig.add_subplot(y,x,i*x+j+1) for i in range(y) for j in range(x)]
-        self.fig = fig
+        figs = [Figure(figsize=(1,1)) for i in range(numPlots)]
+        axes = [fig.add_subplot(111) for fig in figs]
+        self.figs = figs
         self.axes = axes
         [ax.grid() for ax in axes]
         
         #  creates the matplotlib canvasses for the plots 
-        #for i in range(numPlots):
-        canvas = FigureCanvasTkAgg(fig, master=plotFrame)
-        NavigationToolbar2TkAgg(canvas, plotFrame)
-        canvas.show()
-        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
-        '''    
+        for i in range(numPlots):
+            canvas = FigureCanvasTkAgg(figs[i], master=plotFrames[i])
+            #NavigationToolbar2TkAgg(canvas, plotFrames[i])
+            canvas.show()
+            canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+            canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+            
         for c in range(plots[1]):
             plotFrame.columnconfigure(c, weight=1)
             for r in range(plots[0]):
                 plotFrame.rowconfigure(r, weight=1)
                 p = plotFrames[c*plots[1]+r]
                 p.grid(row=r, column=c, sticky=N+S+E+W)
-        '''
+
         
         # This part below takes care of the sliders. It stores the pointers at
         #   self.sliders and self.vars
         if varValues:
-            self.sliders = [[]]*len(varValues)
-            self.vars = [[]]*len(varValues)
-        
-            for k in range(len(varValues)):
-                varsFrame = Frame(rightPane)   
-                [varNames, varLimits, varRes, varDTypes, varDefaults] = varValues[k]
-                numVars = len(varValues[k][0])
+            varsFrame = Frame(rightPane)   
+            [varNames, varLimits, varRes, varDTypes, varDefaults] = varValues
+            numVars = len(varValues[0])
+            
+            self.sliders = []
+            self.vars = []
 
-                for i in range(numVars):
-                    self.vars[k].append(varDTypes[i]()) 
-                    self.vars[k][i].set(varDefaults[i])
-                
-                for i in range(numVars):
+            for i in range(numVars):
+                self.vars.append(varDTypes[i]()) 
+                self.vars[i].set(varDefaults[i])
+            
+            for i in range(numVars):
 
-                    l = Label(varsFrame, text=varNames[i]+': ')
-                    l.grid(row=i,column=0) 
-                    w = Scale(varsFrame,from_=varLimits[i][0], to=varLimits[i][1], resolution=varRes[i], 
-                        orient=HORIZONTAL, command=(lambda x: self.updatePlots()), variable=self.vars[k][i])
-                    w.grid(row=i,column=1, sticky=N+S+E+W)
+                l = Label(varsFrame, text=varNames[i]+': ')
+                l.grid(row=i,column=0) 
+                w = Scale(varsFrame,from_=varLimits[i][0], to=varLimits[i][1], resolution=varRes[i], 
+                    orient=HORIZONTAL, command=(lambda x: self.updatePlots()), variable=self.vars[i])
+                w.grid(row=i,column=1, sticky=N+S+E+W)
 
-                    self.sliders[k].append([l,w])
-                # only let the sliders expand, labels same size
-                varsFrame.columnconfigure(1, weight=1)                       
-                varsFrame.pack(fill=X)
+                self.sliders.append([l,w])
+            # only let the sliders expand, labels same size
+            varsFrame.columnconfigure(1, weight=1)                       
+            varsFrame.pack(fill=X)
                
         self.rightPane = rightPane
         self.master.add(rightPane)
@@ -232,8 +229,6 @@ class FourierWindow(Frame):
         m = max(np.abs(y))
         if not spec:
             ax.axis([min(x), max(x), min(y)-0.1*m, max(y)+0.1*m])
-        else:
-            ax.set_ylim([min(y), max(y)])
         
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
@@ -260,6 +255,15 @@ class FourierWindow(Frame):
         self.signalChanged=True
         self.updatePlots()
     
+    def parseSignal(self):     
+        function = self.funcText.get()
+        if function in self.builtInFunctions.keys():
+            y = self.builtInFunctions[function]
+        else:
+            func = self.customFunc.get()
+            for i in range(10): func = func.replace('f%i'%i, 'f[%i]'%i)
+            y = func
+        self.function = y
         
     def hideShowFreqs(self, oldFreqs, newFreqs, sliders):
         for i in oldFreqs:

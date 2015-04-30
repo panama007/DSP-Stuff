@@ -47,9 +47,9 @@ class FSeriesWindow(FourierWindow):
         varDefaults = [1]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane((2,2), [varValues])
+        self._makeRightPane((2,2), varValues)
         
-        self.numTerms = self.vars[0][0]
+        self.numTerms = self.vars[0]
         
     ############################################################################  
     # Initializes the signals in the plots
@@ -107,9 +107,8 @@ class FSeriesWindow(FourierWindow):
         if max(-coeffs.imag) < 0: self.axes[3].set_ylim([self.axes[3].get_ylim()[0], 0])
         if min(-coeffs.imag) > 0: self.axes[3].set_ylim([0, self.axes[3].get_ylim()[1]])
         
-        #for fig in self.figs:
-        self.fig.canvas.draw_idle()
-        self.fig.tight_layout()
+        for fig in self.figs:
+            fig.canvas.draw_idle()
             #fig.tight_layout()
         
 if __name__ == "__main__":

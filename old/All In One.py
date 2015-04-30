@@ -12,7 +12,7 @@ root = Tk()
 root.wm_title("Signal Processing")
 note = Notebook(root)
 
-windows = [FSeriesWindow, DataGeneratorWindow, STFTWindow, MRAWindow, WaveletWindow]#, DIPWindow] 
+windows = [FSeriesWindow, DataGeneratorWindow, STFTWindow, MRAWindow, WaveletWindow, DIPWindow] 
 
 for w in windows:
     tab = Frame(note)

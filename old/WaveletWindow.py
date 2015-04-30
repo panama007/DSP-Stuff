@@ -77,9 +77,9 @@ class WaveletWindow(FourierWindow):
         varDefaults = [128]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane((2,2), [varValues])
+        self._makeRightPane((2,2), varValues)
         
-        self.maxScale = self.vars[0][0]
+        self.maxScale = self.vars[0]
         
     
     def updateFamily(self,_):
@@ -106,14 +106,13 @@ class WaveletWindow(FourierWindow):
     def initSignals(self):
         self._initSignals(numMarkers=1)
         
-        self.fig.canvas.mpl_connect('button_press_event', self.mouseCallback)
+        self.figs[1].canvas.mpl_connect('button_press_event', self.mouseCallback)
         self.slope = [None]*4
         
         self.signalFromFile()
 
-    def mouseCallback(self, event):   
-        #print event.ydata
-        if not (bool(event.ydata) & (event.inaxes == self.axes[1])): return
+    def mouseCallback(self, event):    
+        if not event.ydata: return
         
         s = self.axes[1].format_coord(event.xdata,event.ydata)
         
@@ -190,19 +189,18 @@ class WaveletWindow(FourierWindow):
         self.signalChanged = False
         
         axes = self.axes       
-        fig = self.fig
+        figs = self.figs
         lines = self.lines
                 
         plotcwt = abs(self.cwt[(name,wave,N)][:self.maxScale.get()])
 
-        #figs[1].clf()
-        axes[1].cla()
+        figs[1].clf()
         if self.plotType.get() == 0:
-            axes[1] = fig.add_subplot(222)
+            axes[1] = figs[1].add_subplot(111)
             
             axes[1].imshow(plotcwt,aspect='auto')
         elif self.plotType.get() == 2:
-            axes[1] = fig.add_subplot(222)
+            axes[1] = figs[1].add_subplot(111)
             
             color = self.contourColor.get()
             color = None if color == 0 else 'k'
@@ -210,7 +208,7 @@ class WaveletWindow(FourierWindow):
             axes[1].clabel(cs, inline=1)
             
         else:
-            axes[1] = fig.add_subplot(222, projection='3d')
+            axes[1] = figs[1].add_subplot(111, projection='3d')
 
             shape = plotcwt.shape
             Y = np.array([range(shape[0]) for i in range(shape[1])]).T
@@ -226,10 +224,10 @@ class WaveletWindow(FourierWindow):
         self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
         self.formatAxes(axes[1],t,range(self.maxScale.get()),'Time (sec)','Scale','Scalogram of '+self.filename.get() +'   (LClick to select subsignal, RClick twice for slope)', True)
         
-        self.sliders[0][0][1].config(to=len(data)/2-2)
+        self.sliders[0][1].config(to=len(data)/2-2)
         
-        #for fig in self.figs:
-        self.fig.canvas.draw_idle()
+        for fig in self.figs:
+            fig.canvas.draw_idle()
             #fig.subplots_adjust(bottom = 0.18)
   
 if __name__ == "__main__":

@@ -6,9 +6,9 @@ class DataGeneratorWindow(FourierWindow):
     def __init__(self, root):
         self.title = 'Data Generator'
         
-        self.builtInFunctions = {'Sinusoid' : 'cos(f[0]*2*pi*t)',
-                            'Two Sinusoids' : 'cos(f[0]*2*pi*t) + cos(f[1]*2*pi*t)',
-                            'Two Seq. Sinusoids' : 'where(t<t[N/2], cos(f[0]*2*pi*t), cos(f[1]*2*pi*t))',
+        self.builtInFunctions = {'Sinusoid' : 'sin(f[0]*2*pi*t)',
+                            'Two Sinusoids' : 'sin(f[0]*2*pi*t) + sin(f[1]*2*pi*t)',
+                            'Two Seq. Sinusoids' : 'where(t<t[N/2], sin(f[0]*2*pi*t), sin(f[1]*2*pi*t))',
                             'Delta' : 'where(t==t[N/2], 1, 0)',
                             'Chirp' : 'sin((f[0]+(f[1]-f[0])/2*t/t[-1])*2*pi*t)'}
     
@@ -18,7 +18,7 @@ class DataGeneratorWindow(FourierWindow):
         self.maxFreqs=5
         t = linspace(0.,N*Ts,N)
         n = arange(N, dtype=float)
-        freqs = (n / N * Fs) - (Fs / 2)
+        freqs = (n / N * Fs)[:N/2]
         self.params=[N,Fs,Ts,t,n,freqs]
     
         self.signalType = 0
@@ -39,11 +39,9 @@ class DataGeneratorWindow(FourierWindow):
         funcText.set('Sinusoid')
         
         # variable to hold the user-input function
-        self.customFunc = StringVar()
-        self.customFunc.set('sin(f0*t*cos(f1*t))')
-        # variable for number of decaying complex exponentials
-        self.numDCE = IntVar()
-        self.numDCE.set(2)
+        customFunc = StringVar()
+        self.customFunc = customFunc
+        customFunc.set('sin(f0*t*cos(f1*t))')
         # boolean variable for exponential decay
         decay = BooleanVar()
         self.decay = decay
@@ -58,20 +56,14 @@ class DataGeneratorWindow(FourierWindow):
         # create all the radiobuttons
         for i in range(len(self.builtInFunctions)):
             text = self.builtInFunctions.keys()[i]
-            f = Frame(funcFrame)
-            f.pack(side=TOP, fill=BOTH)
-            Radiobutton(f, text=text, variable=funcText, value=text, command=self.updatePlots).pack(side=LEFT)
-        # custom function
-        f = Frame(funcFrame)
-        f.pack(side=TOP, fill=BOTH)
-        Radiobutton(f, text='', variable=funcText, value='DCE', command=self.updatePlots).pack(side=LEFT)
-        Entry(f, textvariable=self.numDCE, width=2).pack(side=LEFT)    
-        Label(f, text='Decaying Complex Exponentials').pack(side=LEFT, fill=X)
-        # custom function
-        f = Frame(funcFrame)
-        f.pack(side=TOP, fill=BOTH)
-        Radiobutton(f, text='', variable=funcText, value='Custom', command=self.updatePlots).pack(side=LEFT)
-        Entry(f, textvariable=self.customFunc).pack(side=LEFT)
+            rb = Radiobutton(funcFrame, text=text, variable=funcText, value=text, command=self.updatePlots)
+            rb.grid(row=i,columnspan=2,sticky=W,padx=(self.pads[0],0))
+        # custom function radiobutton
+        rb = Radiobutton(funcFrame, text='', variable=funcText, value=' ', command=self.updatePlots)
+        rb.grid(row=5,sticky=W,padx=(self.pads[0],0))
+        # custom function text entry box
+        eb = Entry(funcFrame, textvariable=customFunc)
+        eb.grid(row=5,column=1,sticky=E,padx=(0,self.pads[0]))
         
         # create a frame to hold the exponential decay radiobuttons
         Label(leftPane, text='Exponential Decay').pack(fill=X, pady=(self.pads[1],0), padx=self.pads[0])
@@ -100,17 +92,10 @@ class DataGeneratorWindow(FourierWindow):
         varDefaults = [1]*self.maxFreqs
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        varNames = ['d%i'%i for i in range(self.maxFreqs)]
-        varLimits = [(0, 0.05)]*self.maxFreqs
-        varRes = [0.1]*self.maxFreqs
-        varDTypes = [DoubleVar]*self.maxFreqs
-        varDefaults = [1]*self.maxFreqs
-        varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
+        self._makeRightPane((3,1),varValues)
         
-        self._makeRightPane((3,1),[varValues])
-        
-        self.freqs = self.vars[0]
-        self.freqSliders = self.sliders[0]
+        self.freqs = self.vars
+        self.freqSliders = self.sliders
       
     ############################################################################  
     # Initializes the signals in the plots
@@ -121,22 +106,6 @@ class DataGeneratorWindow(FourierWindow):
         
         self.freqsUsed = range(self.maxFreqs)
     
-    def parseSignal(self):     
-        function = self.funcText.get()
-        if function in self.builtInFunctions.keys():
-            y = self.builtInFunctions[function]
-        elif function == 'Custom':
-            func = self.customFunc.get()
-            for i in range(10): func = func.replace('f%i'%i, 'f[%i]'%i)
-            y = func
-        else:
-            n = self.numDCE.get()
-            t = ''
-            for i in range(n):
-                t += '1*exp(-0*t)*exp(1j*2*pi*f[%i]*t)+'%i
-            y = t[:-1]
-        self.function = y
-    
     ############################################################################  
     # Updates the plots when anything is changed
     #
@@ -146,24 +115,18 @@ class DataGeneratorWindow(FourierWindow):
         f = [self.freqs[i].get() for i in range(self.maxFreqs)]
         oldFreqs = self.freqsUsed
         newFreqs = []
-        self.parseSignal()
-        
-        for slider in self.freqSliders:
-            from_ = -10 if self.funcText.get() == 'DCE' else 0
-            slider[1].config(from_=from_)
-
+        self.parseSignal() 
         for i in range(self.maxFreqs):
             if 'f[%i]'%i in self.function: newFreqs.append(i)
         self.hideShowFreqs(oldFreqs, newFreqs, self.freqSliders)
         self.freqsUsed = newFreqs
         
         y = eval(self.function)
-        y = y.astype(np.complex_)
         if self.decay.get():
             y = y*exp(-0.03*t)       
         y /= max(np.abs(y)) 
         self.y = y
-        S = abs(fft.fftshift(fft.fft(y)))
+        S = abs(fft.fftshift(fft.fft(y)))[N/2:]
         
         self.lines[0].set_data(t,y)
         self.lines[1].set_data(freqs,S)
@@ -180,9 +143,9 @@ class DataGeneratorWindow(FourierWindow):
         self.formatAxes(self.axes[1],freqs,S,'Frequency (Hz)','Magnitude','FFT of '+name)
         self.formatAxes(self.axes[2],t,freqs,'Time (sec)','Frequency (Hz)','Spectrogram, Fs = 10 Hz',spec=True)
         
-        #for fig in self.figs:
-        self.fig.canvas.draw_idle()
-        self.fig.tight_layout()
+        for fig in self.figs:
+            fig.canvas.draw_idle()
+            fig.tight_layout()
         #[fig.canvas.draw_idle() for fig in self.figs]
         
         

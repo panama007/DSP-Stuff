@@ -43,8 +43,8 @@ class STFTWindow(FourierWindow):
         #Button(titlePane, text='?', command=self.popupWindow).pack(fill=BOTH, side=LEFT)
 
         dic = {'Modified Bartlett-Hann':'barthann', 'Bartlett':'bartlett', 'Blackman':'blackman', 'Blackman-Harris':'blackmanharris', 
-        'Bohman':'bohman', 'Rectangular':'boxcar', 'Cosine':'cosine', 'Flat Top':'flattop', 'Gaussian':'gaussian', 'Mexican Hat':'ricker',
-        'Hamming':'hamming','Hann':'hann', 'Nutall':'nuttall', 'Parzen':'parzen', 'Triangular':'triang'}
+        'Bohman':'bohman', 'Rectangular':'boxcar', 'Dolph-Chebyshev':'chebwin', 'Cosine':'cosine', 'Flat Top':'flattop', 'Hamming':'hamming',
+        'Hann':'hann', 'Nutall':'nuttall', 'Parzen':'parzen', 'Triangular':'triang'}
         self.dic=dic
         self.window = StringVar()
         self.window.set('Rectangular')
@@ -95,10 +95,10 @@ class STFTWindow(FourierWindow):
         varDefaults = [10,0]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane((2,2), [varValues])
+        self._makeRightPane((2,2), varValues)
         
-        self.width = self.vars[0][0]
-        self.center = self.vars[0][1]
+        self.width = self.vars[0]
+        self.center = self.vars[1]
         
 
     ############################################################################  
@@ -131,11 +131,7 @@ class STFTWindow(FourierWindow):
         center = self.center.get()
         
         #print width, center, (center-width/2), (N-center-width/2)
-        window = self.dic[self.window.get()]
-        if window == 'gaussian' or window == 'ricker':
-            win = eval('signal.%s(%i,%f)'%(window,width,width/10.))
-        else:
-            win = eval('signal.%s(%i)'%(window,width))
+        win = eval('signal.%s(%i)'%(self.dic[self.window.get()],width))
         win = np.append(np.append([0]*N,win),[0]*N)
         win = win[N+width/2-center:2*N+width/2-center]
         
@@ -160,12 +156,12 @@ class STFTWindow(FourierWindow):
         self.formatAxes(axes[2],t,win_data,'Time (sec)','Amplitude','Windowed Signal')
         self.formatAxes(axes[3],w,win_F,'Frequency (Hz)','Magnitude','FFT of Windowed Signal')
 
-        self.sliders[0][0][1].config(to=len(data)/2)
-        self.sliders[0][1][1].config(to=len(data))
+        self.sliders[0][1].config(to=len(data)/2)
+        self.sliders[1][1].config(to=len(data))
         
-        #for fig in self.figs:
-        self.fig.canvas.draw_idle()
-        #self.fig.tight_layout()
+        for fig in self.figs:
+            fig.canvas.draw_idle()
+            #fig.tight_layout()
         
 if __name__ == "__main__":
     root = Tk()

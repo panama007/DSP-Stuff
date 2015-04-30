@@ -47,7 +47,7 @@ class DIPWindow(FourierWindow):
         varDefaults = [0,0]
         varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
         
-        self._makeRightPane((2,2), [varValues])
+        self._makeRightPane((2,2), varValues)
         
         self.r1 = self.vars[0]
         self.r2 = self.vars[1]

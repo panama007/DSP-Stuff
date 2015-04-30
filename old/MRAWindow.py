@@ -122,8 +122,7 @@ class MRAWindow(FourierWindow):
         canvas.get_tk_widget().pack(fill=BOTH, expand=1)
         canvas._tkcanvas.pack(fill=BOTH, expand=1)
         
-        wave = self.convertDaub(self.wavelet.get(),1)
-        w = pywt.Wavelet(wave)
+        w = pywt.Wavelet(self.wavelet.get())
         f = w.wavefun()
         ax0.plot(f[0])
         ax0.plot(f[1])
@@ -146,12 +145,7 @@ class MRAWindow(FourierWindow):
         
         fig.tight_layout()
         
-    def convertDaub(self, name,dir=0):
-        if name[:2] == 'db':
-            n = int(name[2:])*2 if dir == 0 else int(name[2:])/2
-            return 'db'+str(n)
-        return name
-    
+        
     def updateFamily(self,_):
         self.waveletMenu['menu'].delete(0,'end')
         def c(val):
@@ -160,11 +154,10 @@ class MRAWindow(FourierWindow):
             self.updatePlots()
 
         for wavelet in pywt.wavelist(self.dic[self.family.get()]):
-            wavelet = self.convertDaub(wavelet)
+            #print wavelet
             self.waveletMenu['menu'].add_command(label=wavelet,command=lambda wavelet=wavelet:c(wavelet))
 
-        default = self.convertDaub(pywt.wavelist(self.dic[self.family.get()])[0])
-        self.wavelet.set(default)
+        self.wavelet.set(pywt.wavelist(self.dic[self.family.get()])[0])
         self.updatePlots()
     
     ############################################################################  
@@ -185,8 +178,8 @@ class MRAWindow(FourierWindow):
         
     def updateParams(self):    
         f = self.signal
-        wave = self.convertDaub(self.wavelet.get(),1)
-        m = pywt.wavedec(f,wave, mode='per')
+
+        m = pywt.wavedec(f,self.wavelet.get(), mode='per')
         
         N = len(f)
         delta_w = 1./(N-1)
@@ -196,8 +189,7 @@ class MRAWindow(FourierWindow):
 
     def updateLevels(self):
         l = self.level.get()
-        wave = self.convertDaub(self.wavelet.get(),1)
-        max = pywt.dwt_max_level(len(self.signal),pywt.Wavelet(wave))
+        max = pywt.dwt_max_level(len(self.signal),pywt.Wavelet(self.wavelet.get()))
         
         if l > max:
             self.level.set(max-1)
@@ -210,8 +202,7 @@ class MRAWindow(FourierWindow):
                 self.radioButtons[2][i].grid_remove()
         
     def updateEnergyTable(self): #TODO, clean this up
-        wave = self.convertDaub(self.wavelet.get(),1)
-        max = pywt.dwt_max_level(len(self.signal),pywt.Wavelet(wave))
+        max = pywt.dwt_max_level(len(self.signal),pywt.Wavelet(self.wavelet.get()))
         [f,w,m] = self.params
 
         
@@ -224,9 +215,7 @@ class MRAWindow(FourierWindow):
                     for j in range(max):
                         if j != i:
                             subm[j] = [0]*len(m[j])
-                
-                wave = self.convertDaub(self.wavelet.get(),1)
-                subsignal = pywt.waverec(subm,wave, mode='per')
+                subsignal = pywt.waverec(subm,self.wavelet.get(), mode='per')
                 F = np.fft.fft(subsignal)[:len(subsignal)/2]
                 
                 for j in range(4):
@@ -277,8 +266,8 @@ class MRAWindow(FourierWindow):
             for i in range(len(m)):
                 if i != self.level.get()+1:
                     m[i] = [0]*len(m[i])
-        wave = self.convertDaub(self.wavelet.get(),1)
-        s = pywt.waverec(m,wave, mode='per')
+        #print m
+        s = pywt.waverec(m,self.wavelet.get(), mode='per')
         
         N = len(s)
         t = arange(N)
@@ -309,8 +298,8 @@ class MRAWindow(FourierWindow):
         self.formatAxes(axes[2],t,s,'Time (sec)','Amplitude',levelsText)
         self.formatAxes(axes[3],w,F,axisLabel,'Amplitude','FFT of '+levelsText)
         
-        #for fig in self.figs:
-        self.fig.canvas.draw_idle()
+        for fig in self.figs:
+            fig.canvas.draw_idle()
             #fig.tight_layout()
         
 if __name__ == "__main__":
