@@ -15,19 +15,19 @@ class STFTWindow(FourierWindow):
     #
     ############################################################################   
     def makeLeftPane(self):
-        '''
-        varTitles = ['Plot Type']
+        
+        varTitles = ['FFT Plot Type']
         varDTypes = [BooleanVar]
         varDefaults = [False]
-        varTexts = [['Plot 2D', 'Plot 3D']]
-        varVals = [[False, True]]
+        varTexts = [['Stem Plot', 'Normal Line Plot']]
+        varVals = [[True, False]]
         
         optionsSpecs = [varTitles, varDTypes, varDefaults, varTexts, varVals]
-        '''
         
-        self._makeLeftPane(fileSelector=True)
+        
+        self._makeLeftPane(optionsSpecs,fileSelector=True)
 
-        #self.plot3D = self.options[0]
+        self.fftPlot = self.options[0]
         
         extraOptions = Frame(self.leftPane, bg='grey')
         extraOptions.grid(row=2, column=1, sticky=N+S+E+W)
@@ -82,7 +82,38 @@ class STFTWindow(FourierWindow):
         self.formatAxes(ax1,freqs,F,'FFT Bin','Decibels','Fourier Transform')
         
         fig.tight_layout()
-    
+        
+    def mouseCallback1(self, event, thresholdNum, axisNum):
+        s = self.axes[1].format_coord(event.xdata,event.ydata)
+        
+        yind1 = s.find('y')
+        yind2 = yind1 + s[yind1:].find(' ')
+        y = float(s[yind1+2:yind2])
+        
+        [w,F] = self.Fplot[thresholdNum]
+        
+        if event.button == 1:
+            if self.threshold[thresholdNum][1]: self.threshold[thresholdNum][1].pop(0).remove()
+            
+            self.threshold[thresholdNum][0] = y
+            self.threshold[thresholdNum][1] = self.axes[axisNum].plot(w,[y]*len(w), color='k', linewidth=2)
+            
+        elif event.button == 3:
+            if self.threshold[thresholdNum][1]: self.threshold[thresholdNum][1].pop(0).remove()
+            
+            self.threshold[thresholdNum][0] = None
+            
+        peakTable = self.peaksOrigTable if thresholdNum == 0 else self.peaksWindTable
+        self.updatePeakTable(w,F,thresholdNum,thresholdNum,peakTable,axisNum)
+        self.axes[axisNum].get_figure().canvas.draw_idle()
+            
+    def mouseCallback(self, event):   
+        #print event.ydata
+        if (bool(event.ydata) & (event.inaxes == self.axes[1])):
+            self.mouseCallback1(event,0,1)
+        if (bool(event.ydata) & (event.inaxes == self.axes[3])):
+            self.mouseCallback1(event,1,3)
+        
     ############################################################################  
     # Contains the plots and frequency sliders at the bottom
     #
@@ -110,6 +141,9 @@ class STFTWindow(FourierWindow):
         
         l,=self.axes[0].plot([0], color='red')
         self.lines.append(l)
+        
+        self.fig.canvas.mpl_connect('button_press_event', self.mouseCallback)
+        self.threshold = [[None]*2]*2
 
         self.signalFromFile()
 
@@ -132,8 +166,11 @@ class STFTWindow(FourierWindow):
         
         #print width, center, (center-width/2), (N-center-width/2)
         window = self.dic[self.window.get()]
-        if window == 'gaussian' or window == 'ricker':
+        if window == 'gaussian':
             win = eval('signal.%s(%i,%f)'%(window,width,width/10.))
+        elif window == 'ricker':
+            a = width/10.
+            win = eval('signal.%s(%i,%f)'%(window,width,a))
         else:
             win = eval('signal.%s(%i)'%(window,width))
         win = np.append(np.append([0]*N,win),[0]*N)
@@ -143,26 +180,66 @@ class STFTWindow(FourierWindow):
         
         win_F = abs(fft.fft(win_data)[:N/2])
         
-        self.updatePeakTable(w,F, 0, self.peaksOrigTable, 1)
-        self.updatePeakTable(w,win_F, 1, self.peaksWindTable, 3)
-        
         lines = self.lines
         axes = self.axes
         
         lines[0].set_data(t,data)
         lines[4].set_data(t,win)
-        lines[1].set_data(w,F)
+        #lines[1].set_data(w,F)
         lines[2].set_data(t,win_data)
-        lines[3].set_data(w,win_F)
+        #lines[3].set_data(w,win_F)
         
-        self.formatAxes(axes[0],t,data,'Time (sec)','Amplitude',self.filename.get())
-        self.formatAxes(axes[1],w,F,'Frequency (Hz)','Magnitude','FFT of '+self.filename.get())
-        self.formatAxes(axes[2],t,win_data,'Time (sec)','Amplitude','Windowed Signal')
-        self.formatAxes(axes[3],w,win_F,'Frequency (Hz)','Magnitude','FFT of Windowed Signal')
+        axes[1].cla()
+        axes[1].grid()
+        axes[3].cla()
+        axes[3].grid()
+        if self.fftPlot.get():
+            axes[1].stem(w,F,basefmt='k:')
+            axes[3].stem(w,win_F,basefmt='k:')
+        else:
+            axes[1].plot(w,F)
+            axes[3].plot(w,win_F)
+            
+        mean = sum([amp*freq for (freq, amp) in zip(w, F)])/sum(F)
+        midpoint = sum(F)/2.
+        cur = 0
+        for ind in range(len(w)):
+            cur += F[ind]
+            if cur >= midpoint:
+                median = w[ind]
+                break
+        stddev = (sum([(freq-mean)**2*amp for (freq,amp) in zip(w, F)])/sum(F))**0.5
+        
+        loc = [min(w) + (max(w)-min(w))*0.7, min(F) + (max(F)-min(F))*0.9]
+        axes[1].text(loc[0],loc[1],'Mean: %0.5f\nMedian: %0.05f\nStd. Dev: %0.05f'%(mean,median,stddev),bbox={'facecolor':'white','alpha':1,'pad':10})
+        
+        mean = sum([amp*freq for (freq, amp) in zip(w, win_F)])/sum(win_F)
+        midpoint = sum(win_F)/2.
+        cur = 0
+        for ind in range(len(w)):
+            cur += win_F[ind]
+            if cur >= midpoint:
+                median = w[ind]
+                break
+        stddev = (sum([(freq-mean)**2*amp for (freq,amp) in zip(w, win_F)])/sum(win_F))**0.5
+        
+        loc = [min(w) + (max(w)-min(w))*0.7, min(win_F) + (max(win_F)-min(win_F))*0.9]
+        axes[3].text(loc[0],loc[1],'Mean: %0.5f\nMedian: %0.05f\nStd. Dev: %0.05f'%(mean,median,stddev),bbox={'facecolor':'white','alpha':1,'pad':10})
+         
+        self.Fplot = [[w,F],[w,win_F]]
+        self.updatePeakTable(w,F, 0, 0, self.peaksOrigTable, 1)
+        self.updatePeakTable(w,win_F, 1, 1, self.peaksWindTable, 3)
+        
+        yscale = [min(min(data),min(win)), max(max(data),max(win))]
+        self.formatAxes(axes[0],t,yscale,'Time (ms)','Amplitude',self.filename.get())
+        self.formatAxes(axes[1],w,F,'Frequency (kHz)','Magnitude','FFT of '+self.filename.get())
+        self.formatAxes(axes[2],t,win_data,'Time (ms)','Amplitude','Windowed Signal')
+        self.formatAxes(axes[3],w,win_F,'Frequency (kHz)','Magnitude','FFT of Windowed Signal')
 
         self.sliders[0][0][1].config(to=len(data)/2)
         self.sliders[0][1][1].config(to=len(data))
         
+        [ax.axhline(color='k') for ax in self.axes]
         #for fig in self.figs:
         self.fig.canvas.draw_idle()
         #self.fig.tight_layout()

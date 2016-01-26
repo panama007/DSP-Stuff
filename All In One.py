@@ -1,9 +1,11 @@
-from WaveletWindow import *
+from CWTWindow import *
 from DataGeneratorWindow import *
 from MRAWindow import *
 from STFTWindow import *
 from DIPWindow import *
 from FSeriesWindow import *
+from MRATablePlotsComparisonWindow import *
+from CWTTablePlotsComparisonWindow import *
 
 import os
 from ttk import Notebook
@@ -12,7 +14,7 @@ root = Tk()
 root.wm_title("Signal Processing")
 note = Notebook(root)
 
-windows = [FSeriesWindow, DataGeneratorWindow, STFTWindow, MRAWindow, WaveletWindow]#, DIPWindow] 
+windows = [FSeriesWindow, DataGeneratorWindow, STFTWindow, MRAWindow, CWTWindow, MRAComparisonWindow, CWTComparisonWindow] 
 
 for w in windows:
     tab = Frame(note)

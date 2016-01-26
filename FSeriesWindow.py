@@ -82,7 +82,7 @@ class FSeriesWindow(FourierWindow):
         dt = 4./1024
         t = np.linspace(-2,2-dt,1024)
         y = func(t)
-        print sum(y)/len(t), t[0], t[-1]
+        #print sum(y)/len(t), t[0], t[-1]
         n = self.numTerms.get()
         
         coeffs, approx = self.fSeries(t,y,n,1.)
@@ -97,16 +97,17 @@ class FSeriesWindow(FourierWindow):
         self.axes[2].stem(coeffs.real,basefmt='k:')
         self.axes[3].stem(-coeffs.imag,basefmt='k:')
 
-        self.formatAxes(self.axes[0],t,y,'Time (sec)','Amplitude',funcText)
-        self.formatAxes(self.axes[1],t,approx,'Time (sec)','Amplitude','Approximation of '+funcText)
-        self.formatAxes(self.axes[2],range(-1,n+1),coeffs.real,'Frequency (Hz)','Coefficient','Cosine Coefficients')
-        self.formatAxes(self.axes[3],range(-1,n+1),-coeffs.imag,'Frequency (Hz)','Coefficient','Sine Coefficients')
+        self.formatAxes(self.axes[0],t,y,'Time (ms)','Amplitude',funcText)
+        self.formatAxes(self.axes[1],t,approx,'Time (ms)','Amplitude','Approximation of '+funcText)
+        self.formatAxes(self.axes[2],range(-1,n+1),coeffs.real,'Frequency (kHz)','Coefficient','Cosine Coefficients')
+        self.formatAxes(self.axes[3],range(-1,n+1),-coeffs.imag,'Frequency (kHz)','Coefficient','Sine Coefficients')
         
         if max(coeffs.real) < 0: self.axes[2].set_ylim([self.axes[2].get_ylim()[0], 0])
         if min(coeffs.real) > 0: self.axes[2].set_ylim([0, self.axes[2].get_ylim()[1]])
         if max(-coeffs.imag) < 0: self.axes[3].set_ylim([self.axes[3].get_ylim()[0], 0])
         if min(-coeffs.imag) > 0: self.axes[3].set_ylim([0, self.axes[3].get_ylim()[1]])
         
+        [ax.axhline(color='k') for ax in self.axes]
         #for fig in self.figs:
         self.fig.canvas.draw_idle()
         self.fig.tight_layout()

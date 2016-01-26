@@ -4,6 +4,7 @@ from numpy import *
 import pywt
 
 import os
+import time
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -14,6 +15,9 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 import Tkinter as tk
 import tkFileDialog
 from Tkinter import *
+from ttk import Notebook
+
+import pyscreenshot as ImageGrab
 
 from scipy import signal
 
@@ -46,6 +50,8 @@ class FourierWindow(Frame):
         leftPane = Frame(self.master, bg='grey')
         lleftPane = Frame(leftPane, bg='grey')
         
+        Button(lleftPane, text='Save Tables and Plots', command=self.saveScreenshot).pack(fill=X, pady=self.pads[1], padx=self.pads[0])
+        
         if fileSelector:
             filename = StringVar()
             self.filename = filename
@@ -54,8 +60,7 @@ class FourierWindow(Frame):
             fileSelector = Menubutton(lleftPane,text='Signal Select')
 
             fileSelector.configure(width=10)
-            fileSelector.pack(side=TOP, pady=self.pads[1], padx=self.pads[0]) 
-            
+            fileSelector.pack(side=TOP, pady=self.pads[1], padx=self.pads[0])    
             
             fileSelector.menu = Menu(fileSelector, tearoff=0)
             fileSelector["menu"]  =  fileSelector.menu
@@ -91,21 +96,17 @@ class FourierWindow(Frame):
 
                 frame = Frame(lleftPane)
                 frame.pack(fill=BOTH,pady=(0,self.pads[1]),padx=self.pads[0])
-                
 
                 for j in range(len(varTexts[i])):
                     rb = Radiobutton(frame, text=varTexts[i][j], variable=self.options[i], value=varVals[i][j], command=self.updatePlots)
                     rb.grid(row=j+1,sticky=W,padx=(self.pads[0],0))
                     
                     self.radioButtons[i].append(rb)
-                        
-        lleftPane.grid(row=1,column=1)#,sticky=N+S+E+W)
-        #leftPane.columnconfigure(1,weight=1)
-        #leftPane.rowconfigure(1,weight=1)
-        #leftPane.rowconfigure(2,weight=1)      
-        #leftPane.rowconfigure(3,weight=2)  
-                
-        self.leftPane = leftPane    
+         
+        lleftPane.grid(row=1,column=1)
+       
+        self.leftPane = leftPane   
+        self.lleftPane = lleftPane
         self.master.add(leftPane)    
         
     def _makeRightPane(self, plots, varValues=[]):
@@ -114,8 +115,6 @@ class FourierWindow(Frame):
         numPlots = x*y
         plotFrame = Frame(rightPane)
         plotFrame.pack(fill=BOTH, expand=1)
-        plotFrames = [Frame(plotFrame) for i in range(numPlots)] 
-        #figs = [Figure(figsize=(1,1)) for i in range(numPlots)]
         fig = Figure(figsize=(1,1))
         #print y, x, (y-1)*y+(x-1)+1, (x-1)*y+(y-1)+1
         axes = [fig.add_subplot(y,x,i*x+j+1) for i in range(y) for j in range(x)]
@@ -142,11 +141,12 @@ class FourierWindow(Frame):
         # This part below takes care of the sliders. It stores the pointers at
         #   self.sliders and self.vars
         if varValues:
-            self.sliders = [[]]*len(varValues)
-            self.vars = [[]]*len(varValues)
+            self.sliders = [[] for i in range(len(varValues))]
+            self.vars = [[] for i in range(len(varValues))]
+            varsFrame = Frame(rightPane)
         
             for k in range(len(varValues)):
-                varsFrame = Frame(rightPane)   
+                   
                 [varNames, varLimits, varRes, varDTypes, varDefaults] = varValues[k]
                 numVars = len(varValues[k][0])
 
@@ -157,18 +157,29 @@ class FourierWindow(Frame):
                 for i in range(numVars):
 
                     l = Label(varsFrame, text=varNames[i]+': ')
-                    l.grid(row=i,column=0) 
+                    l.grid(row=i,column=2*k) 
                     w = Scale(varsFrame,from_=varLimits[i][0], to=varLimits[i][1], resolution=varRes[i], 
                         orient=HORIZONTAL, command=(lambda x: self.updatePlots()), variable=self.vars[k][i])
-                    w.grid(row=i,column=1, sticky=N+S+E+W)
+                    w.grid(row=i,column=2*k+1, sticky=N+S+E+W)
 
                     self.sliders[k].append([l,w])
                 # only let the sliders expand, labels same size
-                varsFrame.columnconfigure(1, weight=1)                       
+                varsFrame.columnconfigure(2*k+1, weight=1)                       
                 varsFrame.pack(fill=X)
                
         self.rightPane = rightPane
         self.master.add(rightPane)
+    
+    def saveScreenshot(self):
+        f = tkFileDialog.asksaveasfilename(defaultextension='.bmp', initialdir='figures/', filetypes=[('Bitmap Image','.bmp')])
+        if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+    
+        self.master.config(cursor='none')
+        time.sleep(0.05)
+        im=ImageGrab.grab(bbox=(0,20,1920,1080-40)) # X1,Y1,X2,Y2
+        im.save(f)
+        self.master.config(cursor='arrow')
     
     def makeTables(self, headings, frames, heights):
         tables = [[] for i in headings]
@@ -192,26 +203,41 @@ class FourierWindow(Frame):
          
         return tables
     
-    def updatePeakTable(self, w, F, markersNum, table, axNum):
+    def freq2ppm(self, freqs):
+        return 4.5 - np.array(freqs)*2500/70.45
+    
+    def updatePeakTable(self, w, F, markersNum, thresholdNum, table, axNum, ppmTable=0, ppmPlot=0):
         numRows = len(table)
-        peaks = self.topNPeaks(F, numRows)
+        peaks = self.topNPeaks(F, numRows, thresholdNum)
         freqs = [w[p[0]] for p in peaks]
+        l = 3
+        if ppmTable: 
+            ppms = self.freq2ppm(freqs)
+            l = 4
         amps = [p[1] for p in peaks]
 
-        if self.markers[markersNum]: self.markers[markersNum].remove()
-        self.markers[markersNum] = self.axes[axNum].scatter(freqs,amps,marker='x',c='r')
+        if self.markers[markersNum]: 
+            try:
+                self.markers[markersNum].remove()
+            except:
+                pass
+        if ppmPlot: self.markers[markersNum] = self.axes[axNum].scatter(ppms,amps,marker='x',c='r')
+        else: self.markers[markersNum] = self.axes[axNum].scatter(freqs,amps,marker='x',c='r')
         
         for i in range(numRows):
             #print i, len(peaks), peaks
             row = table[i]
             
             if i < len(peaks):
-                vals = ['#%i'%(i+1),'%f'%freqs[i],'%f'%amps[i]]
-                for j in range(3):
+                if not ppmTable:
+                    vals = ['#%i'%(i+1),'%f'%freqs[i],'%f'%amps[i]]
+                else:
+                    vals = ['#%i'%(i+1),'%f'%freqs[i],'%f'%ppms[i],'%f'%amps[i]]
+                for j in range(l):
                     row[j][0].grid()
                     row[j][1].set(vals[j])
             else:
-                for j in range(3):
+                for j in range(l):
                     row[j][0].grid_remove()
                     
     def _initSignals(self, numMarkers=0):
@@ -243,10 +269,16 @@ class FourierWindow(Frame):
         name = self.filename.get()
         if self.signalType == 0:
             with open(self.folder+name, 'rb') as f:
-                lines = map(lambda line: line.replace(b'+-', b'-'), f)
+                fixes  = [['+-','-'], ['\x00', ''], ['\r\n',''], ['\xff\xfe','']]
+                lines = []
+                for line in f:
+                    temp = line
+                    for fix in fixes: temp = temp.replace(fix[0],fix[1])
+                    lines.append(temp)
                 y = loadtxt(lines, dtype=complex128)
             y /= max(abs(y))
             self.funcText = name.replace('.dat', '')
+            self.funcText = name.replace('.txt', '')
             l = self.len.get()
             if l > 0:
                 self.len.set(int(2**ceil(log(l)/log(2))))
@@ -261,23 +293,19 @@ class FourierWindow(Frame):
         self.updatePlots()
     
         
-    def hideShowFreqs(self, oldFreqs, newFreqs, sliders):
-        for i in oldFreqs:
-            if i not in newFreqs:
-                sliders[i][0].grid_remove()
-                sliders[i][1].grid_remove()
-        for i in newFreqs:
-            if i not in oldFreqs:
-                sliders[i][0].grid()
-                sliders[i][1].grid() 
     
-    def topNPeaks(self, data, N):
+    
+    def topNPeaks(self, data, N, thresholdNum):
         peaks = []
         last = [-1]
         data = last + list(data) + last
         for i in range(len(data)-2):
-            if data[i+1] > data[i] and data[i+1] > data[i+2]:
-                peaks.append( (i, data[i+1]) )
+            try:
+                if data[i+1] > data[i] and data[i+1] > data[i+2] and data[i+1] > self.threshold[thresholdNum][0]:
+                    peaks.append( (i, data[i+1]) )
+            except:
+                if data[i+1] > data[i] and data[i+1] > data[i+2]:
+                    peaks.append( (i, data[i+1]) )
                 
         s = sorted(peaks, key=(lambda x: -x[1]))
         return s[:N]

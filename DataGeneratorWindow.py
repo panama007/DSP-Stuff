@@ -10,10 +10,13 @@ class DataGeneratorWindow(FourierWindow):
                             'Two Sinusoids' : 'cos(f[0]*2*pi*t) + cos(f[1]*2*pi*t)',
                             'Two Seq. Sinusoids' : 'where(t<t[N/2], cos(f[0]*2*pi*t), cos(f[1]*2*pi*t))',
                             'Delta' : 'where(t==t[N/2], 1, 0)',
-                            'Chirp' : 'sin((f[0]+(f[1]-f[0])/2*t/t[-1])*2*pi*t)'}
+                            'Chirp' : 'sin((f[0]+(f[1]-f[0])/2*t/t[-1])*2*pi*t)',
+                            'Square': 'square(f[0]*2*pi*t)',
+                            'Sqrt(Sinusoid)' : 'where(sin(2*pi*f[0]*t)>0, sqrt(sin(2*pi*f[0]*t)), 0.)',
+                            'Sawtooth' : 'signal.sawtooth(f[0]*2*pi*t)'}
     
         N = 1024
-        Fs = 10.
+        Fs = 1.
         Ts = 1/Fs
         self.maxFreqs=5
         t = linspace(0.,N*Ts,N)
@@ -34,6 +37,8 @@ class DataGeneratorWindow(FourierWindow):
         leftPane = Frame(self.master, bg='grey')
         # create a variable to hold function currently being analyzed
         
+        Button(leftPane, text='Save Tables and Plots', command=self.saveScreenshot).pack(fill=X, pady=self.pads[1], padx=self.pads[0])
+        
         funcText = StringVar()
         self.funcText = funcText
         funcText.set('Sinusoid')
@@ -48,6 +53,14 @@ class DataGeneratorWindow(FourierWindow):
         decay = BooleanVar()
         self.decay = decay
         decay.set(False)
+        # random noise
+        noise = BooleanVar()
+        self.noise = noise
+        noise.set(False)
+        # fft plot type
+        fftPlot = BooleanVar()
+        self.fftPlot = fftPlot
+        fftPlot.set(False)
         
         Label(leftPane, text='Functions').pack(fill=X, pady=(self.pads[1],0), padx=self.pads[0])
         # create a frame to hold the function radiobuttons
@@ -83,6 +96,26 @@ class DataGeneratorWindow(FourierWindow):
         Radiobutton(expFrame, text='No Exponential Decay',variable=decay,value=False, 
             command=self.updatePlots).grid(row=1,stick=W,padx=self.pads[0])
             
+        # create a frame to hold the exponential decay radiobuttons
+        Label(leftPane, text='Random Noise').pack(fill=X, pady=(self.pads[1],0), padx=self.pads[0])
+        noiseFrame = Frame(leftPane)
+        noiseFrame.pack(fill=BOTH,pady=(0,self.pads[1]),padx=self.pads[0])
+        # both radiobuttons
+        Radiobutton(noiseFrame, text='Add Noise',variable=noise,value=True, 
+            command=self.updatePlots).grid(row=0,stick=W,padx=self.pads[0])
+        Radiobutton(noiseFrame, text='No Noise',variable=noise,value=False, 
+            command=self.updatePlots).grid(row=1,stick=W,padx=self.pads[0])
+            
+            # create a frame to hold the exponential decay radiobuttons
+        Label(leftPane, text='FFT Plot Type').pack(fill=X, pady=(self.pads[1],0), padx=self.pads[0])
+        noiseFrame = Frame(leftPane)
+        noiseFrame.pack(fill=BOTH,pady=(0,self.pads[1]),padx=self.pads[0])
+        # both radiobuttons
+        Radiobutton(noiseFrame, text='Stem Plot',variable=fftPlot,value=True, 
+            command=self.updatePlots).grid(row=0,stick=W,padx=self.pads[0])
+        Radiobutton(noiseFrame, text='Normal Line Plot',variable=fftPlot,value=False, 
+            command=self.updatePlots).grid(row=1,stick=W,padx=self.pads[0])
+            
         self.master.add(leftPane)
         
         b = Button(leftPane, text='Save Current Signal', command=self.file_save)
@@ -93,23 +126,42 @@ class DataGeneratorWindow(FourierWindow):
     #
     ############################################################################    
     def makeRightPane(self):
-        varNames = ['f%i'%i for i in range(self.maxFreqs)]
-        varLimits = [(0.1, 10)]*self.maxFreqs
-        varRes = [0.1]*self.maxFreqs
-        varDTypes = [DoubleVar]*self.maxFreqs
-        varDefaults = [1]*self.maxFreqs
-        varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
+        [N,Fs,Ts,t,n,freqs] = self.params
+    
+        freqNames = ['f%i'%i for i in range(self.maxFreqs)]
+        freqLimits = [(Fs/100., Fs)]*self.maxFreqs
+        freqRes = [Fs/100.]*self.maxFreqs
+        freqDTypes = [DoubleVar]*self.maxFreqs
+        freqDefaults = [1]*self.maxFreqs
+        freqValues = [freqNames, freqLimits, freqRes, freqDTypes, freqDefaults]
         
-        varNames = ['d%i'%i for i in range(self.maxFreqs)]
-        varLimits = [(0, 0.05)]*self.maxFreqs
-        varRes = [0.1]*self.maxFreqs
-        varDTypes = [DoubleVar]*self.maxFreqs
-        varDefaults = [1]*self.maxFreqs
-        varValues = [varNames, varLimits, varRes, varDTypes, varDefaults]
+        decayNames = ['T%i'%i for i in range(self.maxFreqs)]
+        decayLimits = [(1, 1000)]*self.maxFreqs
+        decayRes = [1]*self.maxFreqs
+        decayDTypes = [IntVar]*self.maxFreqs
+        decayDefaults = [100]*self.maxFreqs
+        decayValues = [decayNames, decayLimits, decayRes, decayDTypes, decayDefaults]
         
-        self._makeRightPane((3,1),[varValues])
+        ampNames = ['A%i'%i for i in range(self.maxFreqs)]
+        ampLimits = [(0, 100)]*self.maxFreqs
+        ampRes = [1]*self.maxFreqs
+        ampDTypes = [IntVar]*self.maxFreqs
+        ampDefaults = [1]*self.maxFreqs
+        ampValues = [ampNames, ampLimits, ampRes, ampDTypes, ampDefaults]
+        
+        phaseNames = ['p%i'%i for i in range(self.maxFreqs)]
+        phaseLimits = [(0, 2*np.pi)]*self.maxFreqs
+        phaseRes = [0.01]*self.maxFreqs
+        phaseDTypes = [DoubleVar]*self.maxFreqs
+        phaseDefaults = [0]*self.maxFreqs
+        phaseValues = [phaseNames, phaseLimits, phaseRes, phaseDTypes, phaseDefaults]
+        
+        self._makeRightPane((3,1),[freqValues, decayValues, ampValues, phaseValues])
         
         self.freqs = self.vars[0]
+        self.decays = self.vars[1]
+        self.amps = self.vars[2]
+        self.phases = self.vars[3]
         self.freqSliders = self.sliders[0]
       
     ############################################################################  
@@ -133,10 +185,27 @@ class DataGeneratorWindow(FourierWindow):
             n = self.numDCE.get()
             t = ''
             for i in range(n):
-                t += '1*exp(-0*t)*exp(1j*2*pi*f[%i]*t)+'%i
+                t += 'A[%i]*exp(-t/T[%i])*exp(1j*(2*pi*f[%i]*t+p[%i]))+'%(i,i,i,i)
             y = t[:-1]
         self.function = y
-    
+        
+    def hideShowFreqs(self, oldFreqs, newFreqs, sliders):
+        for i in oldFreqs + newFreqs:
+            if i in oldFreqs:
+                for k in range(len(sliders)):
+                    sliders[k][i][0].grid_remove()
+                    sliders[k][i][1].grid_remove()
+            if i in newFreqs:
+                for k in range(len(sliders)):
+                    sliders[k][i][0].grid()
+                    sliders[k][i][1].grid()
+
+        if self.funcText.get() != 'DCE':
+            for i in range(1,len(sliders)):
+                for s in sliders[i]:
+                    s[0].grid_remove()
+                    s[1].grid_remove()
+            
     ############################################################################  
     # Updates the plots when anything is changed
     #
@@ -144,42 +213,71 @@ class DataGeneratorWindow(FourierWindow):
     def updatePlots(self):
         [N,Fs,Ts,t,n,freqs] = self.params
         f = [self.freqs[i].get() for i in range(self.maxFreqs)]
+        T = [self.decays[i].get() for i in range(self.maxFreqs)]
+        A = [self.amps[i].get() for i in range(self.maxFreqs)]
+        p = [self.phases[i].get() for i in range(self.maxFreqs)]
+        
         oldFreqs = self.freqsUsed
         newFreqs = []
         self.parseSignal()
         
         for slider in self.freqSliders:
-            from_ = -10 if self.funcText.get() == 'DCE' else 0
+            from_ = -Fs if self.funcText.get() == 'DCE' else 0
             slider[1].config(from_=from_)
 
         for i in range(self.maxFreqs):
             if 'f[%i]'%i in self.function: newFreqs.append(i)
-        self.hideShowFreqs(oldFreqs, newFreqs, self.freqSliders)
+        self.hideShowFreqs(oldFreqs, newFreqs, self.sliders)
         self.freqsUsed = newFreqs
         
         y = eval(self.function)
         y = y.astype(np.complex_)
-        if self.decay.get():
+        if self.decay.get() and self.funcText.get() != 'DCE':
             y = y*exp(-0.03*t)       
         y /= max(np.abs(y)) 
+        
+        if self.noise.get(): y += np.random.normal(scale=max(y)/10,size=len(y))
+        
         self.y = y
         S = abs(fft.fftshift(fft.fft(y)))
         
         self.lines[0].set_data(t,y)
-        self.lines[1].set_data(freqs,S)
+        self.axes[1].cla()
+        self.axes[1].grid()
+        if self.fftPlot.get():
+            self.axes[1].stem(freqs,S,basefmt='k:')
+        else:
+            self.axes[1].plot(freqs,S)
+            
+        mean = sum([amp*freq for (freq, amp) in zip(freqs, S)])/sum(S)
+        midpoint = sum(S)/2.
+        cur = 0
+        for ind in range(len(freqs)):
+            cur += S[ind]
+            if cur >= midpoint:
+                median = freqs[ind]
+                break
+        stddev = (sum([(freq-mean)**2*amp for (freq,amp) in zip(freqs, S)])/sum(S))**0.5
+        
+        loc = [min(freqs) + (max(freqs)-min(freqs))*0.85, min(S) + (max(S)-min(S))*0.7]
+        self.axes[1].text(loc[0],loc[1],'Mean: %0.5f\nMedian: %0.05f\nStd. Dev: %0.05f'%(mean,median,stddev),bbox={'facecolor':'white','alpha':1,'pad':10})
+        
         
         funcName = self.funcText.get()
         if funcName in self.builtInFunctions.keys(): name = funcName
-        else: name = self.customFunc.get()
+        elif funcName == 'Custom': name = self.customFunc.get()
+        else: name = ''
         
         self.axes[2].cla()
         self.axes[2].specgram(y, Fs=Fs)#, NFFT=80, noverlap=40)
         #self.axes[2].axis([0, (N-128)*Ts, min(freqs), max(freqs)])
         
-        self.formatAxes(self.axes[0],t,y,'Time (sec)','Normalized Amplitude',name)
-        self.formatAxes(self.axes[1],freqs,S,'Frequency (Hz)','Magnitude','FFT of '+name)
-        self.formatAxes(self.axes[2],t,freqs,'Time (sec)','Frequency (Hz)','Spectrogram, Fs = 10 Hz',spec=True)
+        self.formatAxes(self.axes[0],t,y,'Time (ms)','Normalized Amplitude',name)
+        self.formatAxes(self.axes[1],freqs,S,'Frequency (kHz)','Magnitude','FFT of '+name)
+        self.formatAxes(self.axes[2],t,freqs,'Time (ms)','Frequency (kHz)','Spectrogram, Fs = 10 kHz',spec=True)
         
+        
+        [ax.axhline(color='k') for ax in self.axes]
         #for fig in self.figs:
         self.fig.canvas.draw_idle()
         self.fig.tight_layout()

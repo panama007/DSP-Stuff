@@ -49,8 +49,8 @@ class DIPWindow(FourierWindow):
         
         self._makeRightPane((2,2), [varValues])
         
-        self.r1 = self.vars[0]
-        self.r2 = self.vars[1]
+        self.r1 = self.vars[0][0]
+        self.r2 = self.vars[0][1]
         
     def initSignals(self):        
         self._initSignals()
@@ -83,8 +83,7 @@ class DIPWindow(FourierWindow):
         axes[3].set_title('Filtered Image')
         
         
-        for fig in self.figs:
-            fig.canvas.draw_idle()
+        self.fig.canvas.draw_idle()
             #fig.tight_layout()
  
 if __name__ == "__main__":
